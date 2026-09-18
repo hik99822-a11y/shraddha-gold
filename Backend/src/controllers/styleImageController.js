@@ -347,10 +347,13 @@ export const deleteSlotImage = async (req, res) => {
     });
 
     // 3. Clean up physical upload files if they exist in uploads/style-images/
+    const uploadsDir = process.env.DESKTOP_SERVER_DIR || '/Users/hardik/Desktop/server';
+    const styleImagesDir = path.join(uploadsDir, 'style-images');
+
     imagesToClean.forEach((img) => {
       if (img?.url && img.url.startsWith('/uploads/style-images/')) {
         const fileName = path.basename(img.url);
-        const diskPath = path.resolve('uploads/style-images', fileName);
+        const diskPath = path.join(styleImagesDir, fileName);
         if (fs.existsSync(diskPath)) {
           try {
             fs.unlinkSync(diskPath);
