@@ -7,7 +7,6 @@ const CampaignBanner = () => {
     <section className="campaign-banner-split">
       <div className="campaign-container">
         
-        {/* Left: Image Side */}
         <div 
           className="campaign-image-col"
           style={{ backgroundImage: `url("${imgCampaign}")` }}
