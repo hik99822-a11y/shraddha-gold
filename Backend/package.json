@@ -1,0 +1,27 @@
+{
+  "name": "shraddha-gold-backend",
+  "version": "1.0.0",
+  "description": "Production REST API for Shraddha Gold Jewellery Manufacturing",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/utils/seed.js",
+    "sync-server-images": "node src/utils/syncServerImages.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "morgan": "^1.10.0",
+    "multer": "^2.3.0",
+    "node-cron": "^4.6.0",
+    "pdfkit": "^0.20.2",
+    "sharp": "^0.35.4",
+    "xlsx": "^0.18.5"
+  }
+}

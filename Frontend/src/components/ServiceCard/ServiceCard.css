@@ -1,0 +1,96 @@
+/* ==========================================================================
+   SHRADDHA GOLD — SERVICE CARD (WHITE + PISTA GREEN THEME)
+   ========================================================================== */
+
+.service-card {
+  padding: 36px 30px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  cursor: pointer;
+  background: var(--bg-white);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.service-icon-wrapper {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  background: var(--bg-light-brand);
+  border: 1px solid var(--border-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22px;
+  transition: all var(--transition-normal);
+}
+
+.service-icon {
+  color: var(--brand-primary);
+  transition: transform var(--transition-normal);
+}
+
+/* Hover: White → Light Brand tint, Border → Brand Green, Icon → Dark Brand */
+.service-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--brand-light);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.service-card:hover .service-icon-wrapper {
+  background: var(--border-subtle);
+  border-color: var(--brand-primary);
+  transform: scale(1.04);
+}
+
+.service-card:hover .service-icon {
+  color: var(--brand-dark);
+}
+
+.service-subtitle {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: var(--brand-primary);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.service-title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  line-height: 1.3;
+}
+
+.service-desc {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.65;
+  margin-bottom: 24px;
+  flex-grow: 1;
+}
+
+.service-card-footer {
+  padding-top: 18px;
+  border-top: 1px solid var(--border-divider);
+}
+
+.service-action-link {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--brand-primary);
+  letter-spacing: 0.04em;
+  transition: all var(--transition-fast);
+  display: inline-block;
+}
+
+.service-card:hover .service-action-link {
+  color: var(--brand-dark);
+  transform: translateX(4px);
+}

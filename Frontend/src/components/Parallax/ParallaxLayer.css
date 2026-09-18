@@ -1,0 +1,4 @@
+.parallax-layer {
+  position: relative;
+  will-change: transform;
+}

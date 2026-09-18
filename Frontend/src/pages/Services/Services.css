@@ -1,0 +1,161 @@
+/* ==========================================================================
+   SHRADDHA GOLD — SERVICES (WHITE + PISTA GREEN THEME)
+   ========================================================================== */
+
+.services-page-root {
+  padding-top: var(--header-height);
+  background: var(--bg-white);
+}
+
+.services-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+}
+
+.service-detail-box {
+  padding: 38px 34px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-white);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.service-detail-box:hover {
+  border-color: var(--brand-light);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  background: var(--bg-brand-subtle);
+}
+
+.detail-header {
+  margin-bottom: 14px;
+}
+
+.detail-subtitle {
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  color: var(--brand-primary);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.detail-title {
+  font-size: 1.6rem;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.detail-desc {
+  font-size: 0.94rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.detail-deep-dive {
+  padding: 16px 20px;
+  background: var(--bg-light-brand);
+  border-left: 3px solid var(--brand-primary);
+  border-radius: 4px;
+  margin-bottom: 28px;
+  flex-grow: 1;
+}
+
+.detail-deep-dive strong {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--brand-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.detail-deep-dive p {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Metallurgy Section */
+.metallurgy-section {
+  background: var(--bg-light-brand);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.metallurgy-card {
+  padding: 60px 48px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-brand);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.metallurgy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 48px;
+}
+
+.metallurgy-title {
+  font-size: 2.2rem;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.metallurgy-desc {
+  font-size: 0.98rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.alloys-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.alloy-item {
+  padding: 18px 22px;
+  background: var(--bg-light-brand);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.alloy-tag {
+  padding: 6px 14px;
+  background: var(--brand-primary);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.alloy-item p {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+@media (max-width: 992px) {
+  .services-catalog-grid {
+    grid-template-columns: 1fr;
+  }
+  .metallurgy-grid {
+    grid-template-columns: 1fr;
+  }
+}

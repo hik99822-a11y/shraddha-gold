@@ -1,0 +1,458 @@
+/* ==========================================================================
+   SHRADDHA GOLD — 3D SCROLL-DRIVEN JEWELLERY GENESIS & WEARABLE STUDIO
+   ========================================================================== */
+
+.jewellery-genesis-section {
+  position: relative;
+  z-index: 5; /* Must be above the fixed JewelleryAtmosphere overlay (z-index: 1) */
+  isolation: isolate;
+  width: 100%;
+  height: 380vh; /* Multi-stage scroll scrubbing depth */
+  background-color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   STICKY 3D SHOWCASE STAGE (Locks in viewport for 380vh scroll)
+   -------------------------------------------------------------------------- */
+.genesis-sticky-stage {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 45%, var(--text-primary) 0%, var(--text-primary) 65%, var(--text-primary) 100%);
+  user-select: none;
+}
+
+/* 3D WebGL Canvas Viewport */
+.genesis-3d-canvas-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  z-index: 2;
+  touch-action: none;
+}
+
+.genesis-3d-canvas-wrapper.is-dragging {
+  cursor: grabbing;
+}
+
+/* --------------------------------------------------------------------------
+   PHASE STEPPER PILL BAR (Top Center)
+   -------------------------------------------------------------------------- */
+.genesis-phase-stepper-bar {
+  position: absolute;
+  top: calc(var(--header-height, 74px) + 20px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(18, 28, 19, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  border-radius: 40px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  max-width: 92vw;
+  overflow-x: auto;
+}
+
+.genesis-phase-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  color: var(--brand-primary);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: all var(--transition-fast, 0.2s ease);
+  white-space: nowrap;
+}
+
+.genesis-phase-btn:hover {
+  color: #ffffff;
+  background: rgba(177, 209, 203, 0.15);
+}
+
+.genesis-phase-btn.phase-active {
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-primary) 100%);
+  border-color: var(--gold-accent, #c2a052);
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.25);
+}
+
+.phase-icon {
+  color: var(--gold-accent, #c2a052);
+}
+
+.phase-num {
+  font-family: var(--font-serif, 'Cinzel', serif);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gold-accent, #c2a052);
+}
+
+/* --------------------------------------------------------------------------
+   STORY NARRATIVE CARD (Left Floating Panel)
+   -------------------------------------------------------------------------- */
+.genesis-story-narrative-card {
+  position: absolute;
+  top: 50%;
+  left: 5vw;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 380px;
+  max-width: 88vw;
+  padding: 28px 32px;
+  background: rgba(16, 26, 17, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+  pointer-events: none; /* Let pointer pass through to canvas when dragging */
+}
+
+.genesis-tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--gold-accent, #c2a052);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.genesis-phase-headline {
+  font-size: 1.85rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4px;
+  line-height: 1.25;
+}
+
+.genesis-phase-subhead {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold-accent, #c2a052);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.genesis-phase-body {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--border-subtle);
+  margin-bottom: 18px;
+}
+
+.genesis-phase-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.spec-bullet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--bg-light-brand);
+}
+
+/* --------------------------------------------------------------------------
+   INTERACTIVE WEARABLE STUDIO CONTROLS (Right Floating Panel — Phase 4)
+   -------------------------------------------------------------------------- */
+.genesis-studio-controls {
+  position: absolute;
+  top: 50%;
+  right: 5vw;
+  transform: translateY(-50%) translateX(20px);
+  z-index: 10;
+  width: 320px;
+  max-width: 88vw;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  opacity: 0.35;
+  pointer-events: auto;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.genesis-studio-controls.controls-active {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Metal Color Palette Card */
+.genesis-metal-palette-card {
+  background: rgba(16, 26, 17, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.32);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+}
+
+.palette-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--gold-accent, #c2a052);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+.metal-buttons-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metal-theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast, 0.2s ease);
+  text-align: left;
+}
+
+.metal-theme-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(212, 175, 55, 0.3);
+}
+
+.metal-theme-btn.metal-active {
+  background: rgba(177, 209, 203, 0.22);
+  border-color: var(--gold-accent, #c2a052);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.2);
+}
+
+.metal-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+}
+
+.metal-btn-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.metal-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.metal-karat {
+  font-size: 0.7rem;
+  color: var(--brand-primary);
+}
+
+.metal-check-icon {
+  color: var(--gold-accent, #c2a052);
+}
+
+/* Wear Mode & Reset Button Row */
+.genesis-wear-actions-row {
+  display: flex;
+  gap: 10px;
+}
+
+.action-pill-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(16, 26, 17, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 24px;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast, 0.2s ease);
+}
+
+.action-pill-btn:hover {
+  background: rgba(177, 209, 203, 0.25);
+  border-color: var(--brand-primary, var(--brand-primary));
+}
+
+.action-pill-btn.action-active {
+  background: var(--brand-primary, var(--brand-primary));
+  border-color: var(--brand-light, var(--brand-primary));
+  box-shadow: 0 0 16px rgba(177, 209, 203, 0.4);
+}
+
+.action-pill-btn.reset-btn {
+  flex: 0 0 44%;
+}
+
+/* Inquire CTA Button */
+.genesis-inquire-cta {
+  width: 100%;
+  justify-content: center;
+  padding: 12px 18px;
+  font-size: 0.84rem;
+  box-shadow: 0 6px 22px rgba(177, 209, 203, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   360° ORBIT DRAG INSTRUCTION PILL (Bottom Center)
+   -------------------------------------------------------------------------- */
+.genesis-drag-hint-pill {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: rgba(14, 22, 15, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  border-radius: 30px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--border-subtle);
+  pointer-events: none;
+  animation: hintPulse 3.5s ease-in-out infinite;
+}
+
+.hint-sparkle {
+  color: var(--gold-accent, #c2a052);
+}
+
+@keyframes hintPulse {
+  0%, 100% {
+    opacity: 0.85;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.02);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE & TABLET RESPONSIVE ADAPTATIONS
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .genesis-story-narrative-card {
+    top: auto;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90vw;
+    padding: 20px 24px;
+  }
+
+  .genesis-studio-controls {
+    top: auto;
+    bottom: 90px;
+    right: 50%;
+    transform: translateX(50%);
+    width: 90vw;
+    display: none;
+  }
+
+  .genesis-studio-controls.controls-active {
+    display: flex;
+    transform: translateX(50%);
+  }
+
+  .genesis-drag-hint-pill {
+    bottom: 16px;
+    font-size: 0.68rem;
+    padding: 6px 14px;
+    width: 90vw;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .jewellery-genesis-section {
+    height: 320vh;
+  }
+
+  .genesis-phase-stepper-bar {
+    top: calc(var(--header-height, 68px) + 12px);
+    padding: 4px 8px;
+  }
+
+  .genesis-phase-btn {
+    padding: 4px 8px;
+    font-size: 0.68rem;
+  }
+
+  .phase-name {
+    display: none;
+  }
+
+  .genesis-phase-headline {
+    font-size: 1.4rem;
+  }
+
+  .genesis-phase-body {
+    font-size: 0.8rem;
+  }
+
+  .genesis-story-narrative-card {
+    bottom: 70px;
+    padding: 16px;
+  }
+}

@@ -1,0 +1,304 @@
+/* ==========================================================================
+   SHRADDHA GOLD — LUXURY FOOTER & POST-FOOTER STYLES
+   ========================================================================== */
+
+.site-footer-root {
+  background-color: var(--slate-dark);
+  color: var(--bg-light-brand);
+  border-top: 1px solid rgba(177, 209, 203, 0.15);
+  font-family: var(--font-sans);
+  position: relative;
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   MAIN FOOTER CONTAINER & GRID
+   -------------------------------------------------------------------------- */
+.footer-main-container {
+  padding-top: 85px;
+  padding-bottom: 75px;
+}
+
+.footer-columns-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.2fr 1.8fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   COLUMN 1 — COMPANY
+   -------------------------------------------------------------------------- */
+.footer-brand-link {
+  display: inline-block;
+  margin-bottom: 18px;
+  outline: none;
+}
+
+.footer-brand-logo {
+  height: 60px;
+  width: auto;
+  max-width: 230px;
+  object-fit: contain;
+  filter: brightness(1.05);
+}
+
+.footer-company-name {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  color: #ffffff;
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
+}
+
+.footer-company-desc {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--brand-primary);
+  margin-bottom: 22px;
+  max-width: 380px;
+}
+
+.footer-accreditation-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(177, 209, 203, 0.16);
+  border: 1px solid rgba(177, 209, 203, 0.25);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: var(--border-subtle);
+  font-weight: 500;
+}
+
+.accreditation-icon {
+  color: var(--gold-accent);
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   COLUMNS 2 & 3 — HEADINGS & LINK LISTS
+   -------------------------------------------------------------------------- */
+.footer-heading {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  color: #ffffff;
+  margin-bottom: 24px;
+  position: relative;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.footer-heading::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 28px;
+  height: 2px;
+  background: var(--brand-primary);
+  border-radius: 2px;
+}
+
+.footer-link-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-link-item {
+  display: flex;
+}
+
+.footer-nav-anchor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.92rem;
+  color: var(--brand-primary);
+  transition: all var(--transition-fast);
+  padding: 2px 0;
+}
+
+.footer-nav-anchor:hover {
+  color: #ffffff;
+  transform: translateX(4px);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+.footer-arrow-icon {
+  opacity: 0.5;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.footer-nav-anchor:hover .footer-arrow-icon {
+  opacity: 1;
+  color: var(--gold-accent);
+  transform: translate(2px, -2px);
+}
+
+.footer-login-highlight {
+  color: var(--gold-accent-light);
+  font-weight: 600;
+}
+
+.footer-login-highlight:hover {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   COLUMN 4 — CONTACT DETAILS
+   -------------------------------------------------------------------------- */
+.footer-contact-block {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.footer-contact-entry {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.contact-icon-bubble {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: rgba(177, 209, 203, 0.2);
+  border: 1px solid rgba(177, 209, 203, 0.22);
+  color: var(--gold-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.contact-entry-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-entry-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand-primary);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.contact-entry-text {
+  font-size: 0.9rem;
+  color: var(--border-subtle);
+  line-height: 1.5;
+}
+
+.contact-entry-link {
+  font-size: 0.92rem;
+  color: #ffffff;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.contact-entry-link:hover {
+  color: var(--gold-accent);
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   POST-FOOTER / COPYRIGHT BAR (Section 30)
+   -------------------------------------------------------------------------- */
+.post-footer-bar {
+  background-color: var(--slate-darker);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 22px 0;
+  font-size: 0.86rem;
+}
+
+.post-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.post-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--brand-primary);
+}
+
+.copyright-brand {
+  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.copyright-divider {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.established-tag {
+  color: var(--gold-accent-light);
+  font-weight: 500;
+}
+
+.post-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-footer-social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand-primary);
+  transition: color var(--transition-fast), transform var(--transition-fast);
+}
+
+.post-footer-social-link:hover {
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.social-pipe {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.8rem;
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE FOOTER
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .footer-columns-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+}
+
+@media (max-width: 640px) {
+  .footer-main-container {
+    padding-top: 60px;
+    padding-bottom: 50px;
+  }
+  .footer-columns-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .post-footer-inner {
+    flex-direction: column;
+    gap: 14px;
+    text-align: center;
+  }
+}

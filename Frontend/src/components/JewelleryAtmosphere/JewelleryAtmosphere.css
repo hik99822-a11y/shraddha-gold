@@ -1,0 +1,199 @@
+/* ==========================================================================
+   SHRADDHA GOLD — LUXURY JEWELLERY BACKGROUND & VISUAL ATMOSPHERE
+   ========================================================================== */
+
+.jewellery-atmosphere-root {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   1. ROYAL GOLD JALI / FILIGREE LATTICE WATERMARK PATTERN
+   -------------------------------------------------------------------------- */
+.jewellery-jali-watermark-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23c2a052' stroke-width='1'%3E%3Cpath d='M40 0 L80 40 L40 80 L0 40 Z'/%3E%3Ccircle cx='40' cy='40' r='18'/%3E%3Ccircle cx='40' cy='40' r='8'/%3E%3Cpath d='M0 0 L20 20 M60 20 L80 0 M80 80 L60 60 M20 60 L0 80'/%3E%3Cpath d='M40 10 C45 25 55 35 70 40 C55 45 45 55 40 70 C35 55 25 45 10 40 C25 35 35 25 40 10 Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 80px 80px;
+}
+
+/* --------------------------------------------------------------------------
+   2. BOUTIQUE SHOWROOM LIGHTING VIGNETTES
+   -------------------------------------------------------------------------- */
+.jewellery-lighting-vignette {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.vignette-top-left {
+  top: -15%;
+  left: -10%;
+  width: 55vw;
+  height: 55vh;
+  background: radial-gradient(circle, rgba(225, 195, 120, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+}
+
+.vignette-center-right {
+  top: 35%;
+  right: -12%;
+  width: 60vw;
+  height: 60vh;
+  background: radial-gradient(circle, rgba(177, 209, 203, 0.08) 0%, rgba(212, 175, 55, 0.06) 40%, rgba(255, 255, 255, 0) 75%);
+}
+
+.vignette-bottom-left {
+  bottom: -20%;
+  left: 5%;
+  width: 50vw;
+  height: 50vh;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.09) 0%, rgba(255, 255, 255, 0) 70%);
+}
+
+/* --------------------------------------------------------------------------
+   3. BIS HALLMARK & GOLD KARAT PURITY WATERMARKS
+   -------------------------------------------------------------------------- */
+.jewellery-hallmark-stamp {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(194, 160, 82, 0.22);
+  border-radius: 50%;
+  padding: 24px;
+  width: 140px;
+  height: 140px;
+  opacity: 0.14;
+  user-select: none;
+  transform: rotate(-12deg);
+}
+
+.stamp-top-right {
+  top: 14%;
+  right: 6%;
+}
+
+.stamp-mid-left {
+  top: 54%;
+  left: 4%;
+  transform: rotate(8deg);
+}
+
+.hallmark-text-purity {
+  font-family: var(--font-serif, 'Cinzel', serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--gold-accent, #c2a052);
+  margin-bottom: 3px;
+}
+
+.hallmark-text-sub {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: var(--brand-dark, var(--text-primary));
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   4. TWINKLING DIAMOND & GOLD SPARKLE GLINTS
+   -------------------------------------------------------------------------- */
+.jewellery-sparkles-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.jewellery-sparkle-item {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 6px rgba(255, 225, 140, 0.7));
+  will-change: transform, opacity;
+}
+
+.jewellery-sparkle-svg {
+  display: block;
+}
+
+/* --------------------------------------------------------------------------
+   5. FLOATING 24K GOLD LEAF / VARK ORGANIC FLECKS
+   -------------------------------------------------------------------------- */
+.jewellery-gold-leaf-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+.gold-leaf-fleck {
+  position: absolute;
+  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+  background: linear-gradient(135deg, var(--bg-light-brand) 0%, var(--bg-light-brand) 40%, #c2a052 70%, var(--brand-primary) 100%);
+  box-shadow: 0 2px 8px rgba(194, 160, 82, 0.35);
+  filter: blur(0.2px);
+  will-change: transform, opacity;
+}
+
+/* --------------------------------------------------------------------------
+   6. TRANSIENT INTERACTIVE CURSOR SPARKLE GLINT
+   -------------------------------------------------------------------------- */
+.jewellery-cursor-glint {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 999;
+  animation: cursorSparkleFade 0.45s ease-out forwards;
+}
+
+@keyframes cursorSparkleFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1) rotate(45deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6) rotate(90deg);
+  }
+}
+
+/* Mobile & Reduced Motion Fallbacks */
+@media (max-width: 768px) {
+  .jewellery-hallmark-stamp {
+    display: none;
+  }
+  .jewellery-jali-watermark-layer {
+    opacity: 0.04;
+    background-size: 60px 60px;
+  }
+  .jewellery-sparkle-item:nth-child(even) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jewellery-sparkle-item,
+  .gold-leaf-fleck,
+  .jewellery-cursor-glint {
+    display: none !important;
+  }
+}

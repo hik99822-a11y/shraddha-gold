@@ -1,0 +1,605 @@
+/* ==========================================================================
+   SHRADDHA GOLD — MINIMALIST LANDING PAGE REDESIGN STYLES
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. HERO SECTION (Swarovski Style)
+   -------------------------------------------------------------------------- */
+.redesigned-hero-section {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 80px);
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: var(--bg-card);
+}
+
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  z-index: 1;
+}
+
+.hero-slide.active {
+  opacity: 1;
+  z-index: 2;
+}
+
+/* Background Image without Parallax Zoom */
+.hero-background-parallax {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  transform: scale(1.02);
+  transition: transform 8s linear;
+}
+
+.hero-slide.active .hero-background-parallax {
+  transform: scale(1);
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(25, 36, 26, 0.1) 0%, rgba(25, 36, 26, 0.45) 100%);
+  z-index: 2;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 3;
+  color: #ffffff;
+  max-width: 800px;
+  padding: 0 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.hero-subtitle {
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  color: #ffffff;
+  opacity: 0.9;
+  transform: translateY(15px);
+  opacity: 0;
+  transition: all 1s ease 0.3s;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 1.05;
+  color: #ffffff;
+  margin-bottom: 24px;
+  font-weight: 300; /* Thin, elegant font */
+  letter-spacing: -0.02em;
+  transform: translateY(15px);
+  opacity: 0;
+  transition: all 1s ease 0.5s;
+}
+
+.hero-description {
+  font-size: clamp(1rem, 1.2vw, 1.1rem);
+  line-height: 1.6;
+  margin-bottom: 40px;
+  max-width: 600px;
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(15px);
+  opacity: 0;
+  transition: all 1s ease 0.7s;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  transform: translateY(15px);
+  opacity: 0;
+  transition: all 1s ease 0.9s;
+}
+
+.hero-slide.active .hero-subtitle,
+.hero-slide.active .hero-title,
+.hero-slide.active .hero-description,
+.hero-slide.active .hero-actions {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.hero-primary-btn {
+  background: #ffffff !important;
+  color: var(--brand-dark) !important;
+  border-radius: 6px !important;
+  padding: 14px 36px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  border: none !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+  transition: all 0.3s ease !important;
+}
+
+.hero-primary-btn:hover {
+  background: var(--brand-primary) !important;
+  color: #ffffff !important;
+}
+
+/* Carousel Controls (Swarovski Minimal) */
+.hero-carousel-nav {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  .hero-carousel-nav {
+    padding: 0 40px;
+  }
+}
+
+.hero-nav-btn {
+  pointer-events: auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 0; /* Minimal, sharp */
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.hero-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #fff;
+  color: #fff;
+}
+
+.hero-carousel-dots {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  z-index: 10;
+}
+
+.hero-dot {
+  width: 40px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.hero-dot.active, .hero-dot:hover {
+  background: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   2. FEATURED CATEGORIES (Swarovski Style)
+   -------------------------------------------------------------------------- */
+.categories-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-top: 50px;
+}
+
+@media (min-width: 768px) {
+  .categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+  }
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  overflow: hidden;
+  text-decoration: none;
+  transition: transform var(--transition-normal);
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+}
+
+.category-image-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  margin-bottom: 20px;
+  background-color: var(--bg-light-brand); /* Placeholder color if image fails */
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(31, 41, 32, 0.08);
+}
+
+.category-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.category-card:hover .category-img {
+  transform: scale(1.06);
+}
+
+.category-info-clean {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.category-name-clean {
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin: 0;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.category-card:hover .category-name-clean {
+  color: var(--brand-dark);
+}
+
+/* --------------------------------------------------------------------------
+   3. CURATED PRODUCT CAROUSEL
+   -------------------------------------------------------------------------- */
+.curated-products-section {
+  overflow: hidden;
+}
+
+.carousel-controls {
+  display: flex;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .carousel-controls {
+    gap: 12px;
+  }
+}
+
+.carousel-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-white);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+@media (min-width: 768px) {
+  .carousel-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.carousel-btn:hover {
+  background: var(--brand-primary);
+  color: #fff;
+  border-color: var(--brand-primary);
+}
+
+.products-scroll-container {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding-bottom: 24px;
+  margin-top: 30px;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+@media (min-width: 768px) {
+  .products-scroll-container {
+    gap: 24px;
+    margin-top: 40px;
+  }
+}
+
+.products-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.product-card-minimal {
+  min-width: 240px;
+  max-width: 280px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  padding: 12px;
+  transition: all var(--transition-normal);
+}
+
+.product-card-minimal:hover {
+  background: var(--bg-card);
+  box-shadow: 0 10px 30px rgba(31, 41, 32, 0.05);
+  transform: translateY(-4px);
+}
+
+@media (min-width: 768px) {
+  .product-card-minimal {
+    min-width: 280px;
+    max-width: 320px;
+  }
+}
+
+.product-image-wrap {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--bg-light-brand);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.product-card-minimal:hover .product-img {
+  transform: scale(1.05);
+}
+
+.product-actions-overlay {
+  position: absolute;
+  bottom: -70px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  background: linear-gradient(0deg, rgba(255,255,255,0.9) 0%, transparent 100%);
+  transition: bottom 0.3s ease;
+}
+
+.product-card-minimal:hover .product-actions-overlay {
+  bottom: 0;
+}
+
+.btn-quick-view {
+  width: 100%;
+  font-size: 0.8rem;
+  padding: 10px 16px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.product-info-minimal {
+  text-align: center;
+}
+
+.product-name {
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  margin-bottom: 4px;
+}
+
+.product-price {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   4. CAMPAIGN BANNER (Swarovski Split Block)
+   -------------------------------------------------------------------------- */
+.campaign-banner-split {
+  padding: 0;
+  margin-top: 60px;
+}
+
+.campaign-container {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 992px) {
+  .campaign-container {
+    flex-direction: row;
+  }
+}
+
+.campaign-image-col,
+.campaign-content-col {
+  flex: 1;
+}
+
+.campaign-image-col {
+  min-height: 400px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+@media (min-width: 768px) {
+  .campaign-image-col {
+    min-height: 550px;
+  }
+}
+
+.campaign-content-col {
+  padding: 60px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: linear-gradient(135deg, var(--bg-light-brand) 0%, var(--brand-primary) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.campaign-content-col::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
+  border: 1px solid rgba(31, 41, 32, 0.1);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .campaign-content-col {
+    padding: 80px 40px;
+  }
+}
+
+@media (min-width: 992px) {
+  .campaign-content-col {
+    padding: 100px 80px;
+  }
+}
+
+.campaign-subtitle {
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.campaign-title {
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  line-height: 1.1;
+  margin-bottom: 24px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+.campaign-desc {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin-bottom: 32px;
+  max-width: 400px;
+  opacity: 0.9;
+}
+
+.campaign-btn {
+  border-color: var(--brand-dark) !important;
+  color: var(--brand-dark) !important;
+  padding: 12px 28px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 6px !important;
+  background: rgba(255,255,255,0.2) !important;
+}
+
+.campaign-btn:hover {
+  background: var(--brand-dark) !important;
+  color: var(--brand-primary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. NEWSLETTER CTA (Swarovski Style)
+   -------------------------------------------------------------------------- */
+.newsletter-form {
+  position: relative;
+  flex-direction: column;
+}
+
+@media (min-width: 576px) {
+  .newsletter-form {
+    flex-direction: row;
+  }
+}
+
+.newsletter-form input {
+  padding: 14px 20px;
+  border: 1px solid rgba(31, 41, 32, 0.15);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: var(--bg-card);
+  transition: all var(--transition-fast);
+  width: 100%;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
+}
+
+@media (min-width: 576px) {
+  .newsletter-form input {
+    padding: 16px 24px;
+  }
+}
+
+.newsletter-form input:focus {
+  outline: none;
+  border-color: var(--brand-dark);
+}
+
+.newsletter-form .newsletter-btn {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 14px 24px;
+  background: var(--brand-dark);
+  border: 1px solid var(--brand-dark);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(31, 41, 32, 0.15);
+  transition: all var(--transition-fast);
+}
+
+.newsletter-form .newsletter-btn:hover {
+  background: #ffffff;
+  color: var(--brand-dark);
+}
+
+@media (min-width: 576px) {
+  .newsletter-form .newsletter-btn {
+    width: auto;
+    margin-top: 0;
+  }
+}

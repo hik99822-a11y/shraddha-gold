@@ -1,0 +1,221 @@
+/* ==========================================================================
+   SHRADDHA GOLD — DASHBOARD (WHITE + PISTA GREEN THEME)
+   ========================================================================== */
+
+.dashboard-page-root {
+  padding-top: calc(var(--header-height) + 40px);
+  padding-bottom: 90px;
+  min-height: 100vh;
+  background: var(--bg-light-brand);
+}
+
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.dashboard-header-card {
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 24px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-brand);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.dash-user-info {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.dash-avatar-box {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--bg-light-brand);
+  border: 1px solid var(--border-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dash-avatar-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.dash-avatar-box svg {
+  color: var(--brand-primary);
+}
+
+.dash-welcome {
+  font-size: 2rem;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.dash-company-name {
+  font-size: 0.92rem;
+  color: var(--brand-primary);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.dash-logout-btn {
+  padding: 10px 20px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.dash-card {
+  padding: 36px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.dash-card-title {
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-divider);
+}
+
+.credentials-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cred-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-divider);
+}
+
+.cred-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.cred-value {
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.batches-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.batch-item {
+  display: flex;
+  gap: 16px;
+  padding: 18px;
+  background: var(--bg-light-brand);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.batch-status-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.batch-status-icon.in-progress {
+  background: rgba(177, 209, 203, 0.15);
+  color: var(--brand-primary);
+}
+
+.batch-status-icon.completed {
+  background: rgba(52, 211, 153, 0.15);
+  color: #15803d;
+}
+
+.batch-info {
+  flex-grow: 1;
+}
+
+.batch-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.batch-title {
+  color: var(--text-primary);
+  font-size: 0.94rem;
+}
+
+.batch-stage-badge {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-brand);
+  color: var(--brand-dark);
+  font-weight: 600;
+}
+
+.batch-stage-badge.ready {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.batch-details {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.dash-cad-download-box {
+  padding: 16px 20px;
+  background: var(--bg-light-brand);
+  border: 1px dashed var(--brand-primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.dash-cad-download-box svg {
+  color: var(--brand-primary);
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

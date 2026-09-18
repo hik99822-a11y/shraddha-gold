@@ -1,0 +1,917 @@
+/* ==========================================================================
+   EXCEL STOCK INVENTORY & SPREADSHEET SYNC (Shraddha Gold Signature Luxury Theme)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. PAGE HEADER & HERO CONTAINER
+   -------------------------------------------------------------------------- */
+.excel-stock-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  animation: fadeInExcelStock 0.25s ease-out;
+}
+
+@keyframes fadeInExcelStock {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hero Top Bar */
+.excel-hero-bar {
+  background: #ffffff;
+  border: 1.5px solid #B1D1CB;
+  border-radius: 18px;
+  padding: 18px 24px;
+  box-shadow: 0 4px 20px rgba(177, 209, 203, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.excel-hero-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #B1D1CB 0%, #13392e 50%, #B1D1CB 100%);
+  opacity: 0.8;
+}
+
+.excel-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.excel-hero-icon-badge {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #13392e 0%, #0d2820 100%);
+  border: 2px solid #E5C378;
+  color: #F4E7BF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(19, 57, 46, 0.25);
+}
+
+.excel-hero-titles {
+  min-width: 0;
+}
+
+.excel-hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.excel-hero-title {
+  font-size: 1.4rem;
+  font-weight: 850;
+  color: #13392e;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.excel-hero-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #13392e;
+  background: #EAF2F0;
+  border: 1px solid #B1D1CB;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.excel-hero-subtitle {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #587d74;
+  margin: 3px 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.excel-hero-file-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: #13392e;
+  background: rgba(177, 209, 203, 0.3);
+  padding: 1px 7px;
+  border-radius: 5px;
+  border: 1px solid #B1D1CB;
+  font-size: 0.73rem;
+}
+
+/* Action Buttons Group */
+.excel-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.excel-btn-upload {
+  background: linear-gradient(135deg, #B1D1CB 0%, #9fc5be 100%);
+  color: #13392e !important;
+  border: 1.5px solid #8eb5ad;
+  font-size: 0.82rem;
+  font-weight: 850;
+  padding: 8px 16px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(19, 57, 46, 0.12);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+.excel-btn-upload:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9fc5be 0%, #8eb5ad 100%);
+  border-color: #7da59d;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(19, 57, 46, 0.2);
+}
+
+.excel-btn-upload:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.excel-btn-export {
+  background: #ffffff;
+  color: #13392e !important;
+  border: 1.5px solid #B1D1CB;
+  font-size: 0.82rem;
+  font-weight: 750;
+  padding: 8px 15px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.excel-btn-export:hover {
+  background: #eef5f4;
+  border-color: #9cbdb7;
+  transform: translateY(-1px);
+}
+
+.excel-btn-clear {
+  background: #fff5f5;
+  color: #b91c1c !important;
+  border: 1.5px solid #fecaca;
+  font-size: 0.82rem;
+  font-weight: 750;
+  padding: 8px 14px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.excel-btn-clear:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+.excel-btn-clear:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   2. KPI METRICS CARDS (4-CARD GRID)
+   -------------------------------------------------------------------------- */
+.excel-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.excel-kpi-card {
+  background: #ffffff;
+  border: 1.5px solid #B1D1CB;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 16px rgba(177, 209, 203, 0.16);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.excel-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: linear-gradient(90deg, #B1D1CB 0%, #13392e 100%);
+  opacity: 0.5;
+}
+
+.excel-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: #8bbcb3;
+  box-shadow: 0 8px 24px rgba(177, 209, 203, 0.28);
+}
+
+.excel-kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.excel-kpi-label {
+  font-size: 0.66rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6b8c85;
+}
+
+.excel-kpi-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #EAF2F0;
+  color: #13392e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.excel-kpi-val {
+  font-size: 1.35rem;
+  font-weight: 850;
+  color: #13392e;
+  line-height: 1.2;
+}
+
+.excel-kpi-sub {
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: #4a756b;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.excel-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  position: relative;
+  flex-shrink: 0;
+  animation: excelDotPulse 2s infinite ease-in-out;
+}
+
+@keyframes excelDotPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. NAVIGATION TABS (LUXURY PILLS)
+   -------------------------------------------------------------------------- */
+.excel-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid #E2EBE8;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.excel-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.excel-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 750;
+  color: #587d74;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.excel-tab-btn:hover {
+  color: #13392e;
+  background: #eef5f4;
+}
+
+.excel-tab-btn.active {
+  color: #13392e;
+  background: #ffffff;
+  border: 1.5px solid #B1D1CB;
+  box-shadow: 0 2px 8px rgba(177, 209, 203, 0.25);
+  font-weight: 850;
+}
+
+.excel-tab-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: #EAF2F0;
+  color: #13392e;
+  border: 1px solid #B1D1CB;
+}
+
+.excel-tab-btn.active .excel-tab-badge {
+  background: #13392e;
+  color: #ffffff;
+  border-color: #13392e;
+}
+
+/* --------------------------------------------------------------------------
+   4. SEARCH, FILTER & QUICK CONTROLS BAR
+   -------------------------------------------------------------------------- */
+.excel-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: #ffffff;
+  border: 1.5px solid #B1D1CB;
+  border-radius: 14px;
+  padding: 10px 16px;
+  box-shadow: 0 2px 10px rgba(177, 209, 203, 0.12);
+  flex-wrap: wrap;
+}
+
+.excel-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fbfdfc;
+  border: 1.5px solid #D4E2DF;
+  border-radius: 10px;
+  padding: 6px 12px;
+  flex: 1 1 320px;
+  max-width: 480px;
+  transition: all 0.2s ease;
+}
+
+.excel-search-box:focus-within {
+  border-color: #13392e;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(177, 209, 203, 0.3);
+}
+
+.excel-search-input {
+  font-size: 0.8rem;
+  color: #13392e;
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+}
+
+.excel-search-clear-btn {
+  background: transparent;
+  border: none;
+  color: #7a9c95;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.excel-search-clear-btn:hover {
+  color: #13392e;
+}
+
+.excel-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.excel-page-size-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b8c85;
+}
+
+.excel-page-size-select {
+  font-size: 0.78rem;
+  font-weight: 750;
+  color: #13392e;
+  background: #ffffff;
+  border: 1.5px solid #B1D1CB;
+  border-radius: 8px;
+  padding: 5px 10px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.excel-page-size-select:focus {
+  border-color: #13392e;
+}
+
+.excel-refresh-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #EAF2F0;
+  border: 1.5px solid #B1D1CB;
+  color: #13392e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.excel-refresh-btn:hover {
+  background: #13392e;
+  color: #ffffff;
+  border-color: #13392e;
+}
+
+/* Scroll Hint for Mobile/Tablets */
+.excel-scroll-hint {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #587d74;
+  background: #EAF2F0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   5. LUXURY DATATABLE STYLING (STICKY HEADER + FROZEN S.NO)
+   -------------------------------------------------------------------------- */
+.excel-table-card {
+  background: #ffffff;
+  border: 1.5px solid #B1D1CB;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(177, 209, 203, 0.18);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.excel-table-scroll-container {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 620px;
+  width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: #B1D1CB #f4f8f7;
+  -webkit-overflow-scrolling: touch;
+}
+
+.excel-table-scroll-container::-webkit-scrollbar {
+  width: 6px;
+  height: 8px;
+}
+
+.excel-table-scroll-container::-webkit-scrollbar-track {
+  background: #f4f8f7;
+}
+
+.excel-table-scroll-container::-webkit-scrollbar-thumb {
+  background: #B1D1CB;
+  border-radius: 9999px;
+}
+
+.excel-data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+  font-size: 0.78rem;
+}
+
+/* Sticky Headers */
+.excel-data-table thead th {
+  background: linear-gradient(180deg, #edf4f2 0%, #e2ece9 100%);
+  color: #13392e;
+  font-weight: 850;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 11px 14px;
+  border-bottom: 2px solid #B1D1CB;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+/* Sticky Serial # Column (leftmost) */
+.excel-data-table thead th.excel-col-freeze {
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 12;
+  background: #e2ece9;
+  border-right: 1.5px solid #B1D1CB;
+}
+
+.excel-data-table tbody td.excel-col-freeze {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: #ffffff;
+  border-right: 1.5px solid #EAEFEA;
+  text-align: center;
+}
+
+.excel-data-table tbody tr:nth-child(even) td.excel-col-freeze {
+  background: #fafcfb;
+}
+
+.excel-data-table tbody tr:hover td.excel-col-freeze {
+  background: #eaf3f1 !important;
+}
+
+/* Rows & Cells */
+.excel-data-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.excel-data-table tbody tr:nth-child(even) {
+  background: #fafcfb;
+}
+
+.excel-data-table tbody tr:hover {
+  background: rgba(177, 209, 203, 0.16) !important;
+}
+
+.excel-data-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #EAEFEA;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* Index Pill Badge */
+.excel-index-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 850;
+  color: #13392e;
+  background: #EAF2F0;
+  border: 1px solid #B1D1CB;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  display: inline-block;
+  min-width: 28px;
+}
+
+/* Code & Identifiers (StyleCode, JewelCode) */
+.excel-code-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 750;
+  color: #13392e;
+  font-size: 0.76rem;
+  letter-spacing: -0.01em;
+}
+
+/* Category Title */
+.excel-cat-cell {
+  font-weight: 750;
+  color: #13392e;
+}
+
+/* Quantity / Stock Badges */
+.excel-stock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2.5px 8px;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+  border: 1px solid;
+}
+
+.excel-stock-badge.in-stock {
+  background: #E8F8F0;
+  color: #047857;
+  border-color: #A7E4C4;
+}
+
+.excel-stock-badge.low-stock {
+  background: #FFFBEB;
+  color: #B45309;
+  border-color: #FDE68A;
+}
+
+.excel-stock-badge.out-stock {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border-color: #FECACA;
+}
+
+.excel-stock-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Purity / Karat Foil Badges */
+.excel-kt-badge {
+  font-size: 0.66rem;
+  font-weight: 850;
+  background: linear-gradient(135deg, #FFF9EB 0%, #FEF0C7 100%);
+  color: #8D5B08;
+  border: 1.2px solid #EAC575;
+  padding: 2.5px 7px;
+  border-radius: 5px;
+  display: inline-block;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(141, 91, 8, 0.08);
+}
+
+/* Clean Date Cell */
+.excel-date-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  font-weight: 650;
+  color: #13392e;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.excel-date-time {
+  font-size: 0.66rem;
+  color: #7a9c95;
+  margin-left: 3px;
+}
+
+/* Empty Dash */
+.excel-empty-dash {
+  color: #b8cec9;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   6. PAGINATION FOOTER
+   -------------------------------------------------------------------------- */
+.excel-pagination-bar {
+  padding: 12px 20px;
+  background: #ffffff;
+  border-top: 1.5px solid #EAEFEA;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.excel-pagination-info {
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: #6b8c85;
+}
+
+.excel-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.excel-page-nav-btn {
+  background: #ffffff;
+  border: 1.5px solid #B1D1CB;
+  color: #13392e;
+  font-size: 0.78rem;
+  font-weight: 750;
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.excel-page-nav-btn:hover:not(:disabled) {
+  background: #eef5f4;
+  border-color: #9cbdb7;
+  transform: translateY(-1px);
+}
+
+.excel-page-nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.excel-page-indicator {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #13392e;
+  padding: 0 4px;
+}
+
+/* --------------------------------------------------------------------------
+   7. UPLOAD HISTORY LOGS TABLE
+   -------------------------------------------------------------------------- */
+.excel-history-card {
+  background: #ffffff;
+  border: 1.5px solid #B1D1CB;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(177, 209, 203, 0.18);
+  overflow: hidden;
+}
+
+.excel-history-active-badge {
+  font-size: 0.68rem;
+  font-weight: 850;
+  background: #E8F8F0;
+  color: #047857;
+  border: 1px solid #A7E4C4;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.excel-delete-btn {
+  background: #fff5f5;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.excel-delete-btn:hover {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+  transform: scale(1.05);
+}
+
+/* --------------------------------------------------------------------------
+   8. RESPONSIVE BREAKPOINTS
+   -------------------------------------------------------------------------- */
+
+/* Tablets & Small Laptops (< 1024px) */
+@media (max-width: 1024px) {
+  .excel-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .excel-hero-bar {
+    padding: 16px 20px;
+  }
+}
+
+/* Mobile & Phablets (< 768px) */
+@media (max-width: 768px) {
+  .excel-hero-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 16px;
+    gap: 12px;
+  }
+  .excel-hero-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .excel-btn-upload,
+  .excel-btn-export,
+  .excel-btn-clear {
+    flex: 1 1 auto;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.78rem;
+  }
+  .excel-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .excel-control-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+    gap: 10px;
+  }
+  .excel-search-box {
+    flex: none;
+    width: 100%;
+    max-width: 100%;
+  }
+  .excel-controls-right {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .excel-table-scroll-container {
+    max-height: 480px;
+  }
+  .excel-pagination-bar {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+  }
+  .excel-pagination-actions {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Small Phones (< 480px) */
+@media (max-width: 480px) {
+  .excel-hero-title {
+    font-size: 1.15rem;
+  }
+  .excel-hero-icon-badge {
+    width: 42px;
+    height: 42px;
+  }
+  .excel-hero-actions {
+    flex-direction: column;
+  }
+  .excel-btn-upload,
+  .excel-btn-export,
+  .excel-btn-clear {
+    width: 100%;
+  }
+}

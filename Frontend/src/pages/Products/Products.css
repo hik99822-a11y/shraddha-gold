@@ -1,0 +1,119 @@
+/* ==========================================================================
+   SHRADDHA GOLD — PRODUCTS (WHITE + PISTA GREEN THEME)
+   ========================================================================== */
+
+.products-page-root {
+  padding-top: var(--header-height);
+  background: var(--bg-white);
+}
+
+.catalog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-divider);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.showing-count {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+
+.showing-count strong {
+  color: var(--brand-dark);
+}
+
+.purity-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-right: 4px;
+  font-weight: 600;
+}
+
+.purity-filter-btn {
+  padding: 7px 16px;
+  border-radius: 6px;
+  background: var(--bg-white);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.purity-filter-btn:hover {
+  color: var(--brand-primary);
+  border-color: var(--brand-light);
+  background: var(--bg-light-brand);
+}
+
+.purity-filter-btn.active {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(177, 209, 203, 0.25);
+}
+
+.products-showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.b2b-spec-notice {
+  background: var(--bg-light-brand);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.spec-notice-card {
+  padding: 48px 40px;
+  background: var(--bg-white);
+  text-align: center;
+  border: 1px solid var(--border-brand);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.spec-notice-title {
+  font-size: 2rem;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.spec-notice-desc {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 680px;
+  margin: 0 auto 28px auto;
+  line-height: 1.7;
+}
+
+@media (max-width: 1100px) {
+  .products-showcase-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .products-showcase-grid {
+    grid-template-columns: 1fr;
+  }
+  .catalog-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

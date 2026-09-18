@@ -1,0 +1,99 @@
+/* ==========================================================================
+   SHRADDHA GOLD — TOAST NOTIFICATIONS (WHITE + PISTA GREEN THEME)
+   ========================================================================== */
+
+.toast-container {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 320px;
+  max-width: 460px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(31, 41, 32, 0.15);
+  animation: slideUpToast 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpToast {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toast-message {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.toast-close-btn {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all var(--transition-fast);
+}
+
+.toast-close-btn:hover {
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Variants */
+.toast-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.toast-icon.success {
+  color: var(--text-primary);
+}
+
+.toast-error {
+  background: #fef2f2;
+  border: 1px solid var(--bg-light-brand);
+}
+
+.toast-icon.error {
+  color: #dc2626;
+}
+
+.toast-info {
+  background: var(--bg-light-brand);
+  border: 1px solid var(--border-brand);
+}
+
+.toast-icon.info {
+  color: var(--brand-primary);
+}
+
+@media (max-width: 480px) {
+  .toast-container {
+    left: 16px;
+    right: 16px;
+    min-width: auto;
+    bottom: 20px;
+  }
+}

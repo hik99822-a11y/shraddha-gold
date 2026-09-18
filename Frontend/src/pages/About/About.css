@@ -1,0 +1,216 @@
+/* ==========================================================================
+   SHRADDHA GOLD — ABOUT US (WHITE + PISTA GREEN THEME)
+   ========================================================================== */
+
+.about-page-root {
+  padding-top: var(--header-height);
+  background: var(--bg-white);
+}
+
+.page-hero-banner {
+  padding: 80px 0 60px 0;
+  background: var(--bg-light-brand);
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: center;
+}
+
+.page-hero-title {
+  font-size: clamp(2.4rem, 4.5vw, 3.6rem);
+  color: var(--text-primary);
+  margin-bottom: 18px;
+}
+
+.page-hero-desc {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.narrative-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 56px;
+}
+
+.narrative-lead {
+  font-size: 1.18rem;
+  color: var(--brand-dark);
+  line-height: 1.75;
+  font-family: var(--font-serif);
+  margin-bottom: 20px;
+}
+
+.narrative-text {
+  color: var(--text-secondary);
+  font-size: 0.96rem;
+  line-height: 1.75;
+  margin-bottom: 20px;
+}
+
+.stats-strip {
+  display: flex;
+  gap: 32px;
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border-divider);
+}
+
+.strip-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.strip-val {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--brand-primary);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.strip-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.narrative-img-frame {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  height: 520px;
+  border: 1px solid var(--border-brand);
+  box-shadow: var(--shadow-md);
+  background: var(--bg-white);
+}
+
+.narrative-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.narrative-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(31, 41, 32, 0.4) 100%);
+}
+
+.narrative-card-caption {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  padding: 16px 20px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--border-brand);
+  box-shadow: var(--shadow-sm);
+}
+
+.caption-gold {
+  font-size: 0.8rem;
+  color: var(--brand-primary);
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 700;
+}
+
+.caption-text {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.values-section {
+  background: var(--bg-light-brand);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.value-card {
+  padding: 36px 26px;
+  background: var(--bg-white);
+}
+
+.val-icon-box {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  background: var(--bg-light-brand);
+  border: 1px solid var(--border-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.val-title {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.val-desc {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.factory-cta-box {
+  padding: 56px 40px;
+  background: var(--bg-light-brand);
+  border: 1px solid var(--border-brand);
+  text-align: center;
+  border-radius: 8px;
+}
+
+.factory-cta-content h2 {
+  color: var(--text-primary);
+}
+
+.max-w-600 {
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mb-3 {
+  margin-bottom: 12px;
+}
+
+.mb-4 {
+  margin-bottom: 24px;
+}
+
+@media (max-width: 992px) {
+  .narrative-grid {
+    grid-template-columns: 1fr;
+  }
+  .values-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .values-grid {
+    grid-template-columns: 1fr;
+  }
+  .stats-strip {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .narrative-img-frame {
+    height: 360px;
+  }
+}

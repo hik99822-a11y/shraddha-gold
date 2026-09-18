@@ -1,0 +1,71 @@
+/* ==========================================================================
+   SHRADDHA GOLD — MILESTONES / STATISTICS (WHITE + PISTA GREEN THEME)
+   ========================================================================== */
+
+.milestones-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.milestone-card {
+  padding: 38px 28px;
+  text-align: center;
+  position: relative;
+  background: var(--bg-white);
+  border: 1px solid var(--border-brand);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.milestone-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--brand-primary);
+}
+
+.milestone-card-gold-glow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  height: 2px;
+  background: var(--brand-primary);
+}
+
+.milestone-value {
+  font-size: clamp(2.4rem, 3.8vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 8px;
+  color: var(--brand-primary);
+  letter-spacing: -0.01em;
+}
+
+.milestone-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+
+.milestone-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+@media (max-width: 1024px) {
+  .milestones-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 580px) {
+  .milestones-grid {
+    grid-template-columns: 1fr;
+  }
+}
