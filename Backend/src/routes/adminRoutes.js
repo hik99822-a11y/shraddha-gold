@@ -33,7 +33,8 @@ import {
   processBulkImageChunk,
   getUnmatchedImages,
   generateCatalogPdf,
-  syncDesktopServerImages
+  syncDesktopServerImages,
+  syncAgentImages
 } from '../controllers/styleImageController.js';
 import {
   uploadExcelStock,
@@ -55,6 +56,14 @@ import {
 
 const router = express.Router();
 
+// -------------------------------------------------------------
+// PUBLIC AGENT ROUTES (Protected by secret header, not JWT)
+// -------------------------------------------------------------
+router.post('/style-images/agent-sync', syncAgentImages);
+
+// -------------------------------------------------------------
+// SECURED ADMIN ROUTES
+// -------------------------------------------------------------
 // Enforce authentication & Admin role for all admin routes
 router.use(protect);
 router.use(authorizeRoles('admin'));

@@ -115,18 +115,10 @@ export const extractStyleCode = (filename) => {
 };
 
 /**
- * Sync all images from local server folder directly into MongoDB Style records
+ * Process a given payload of image files and sync them to MongoDB Style records.
+ * Can be called with files scanned locally or sent via a remote agent payload.
  */
-export const syncServerFolderToStyles = async (serverDir = DEFAULT_SERVER_DIR) => {
-  console.log(`\n🔍 [SyncServerImages]: Scanning folder: ${serverDir}`);
-
-  if (!fs.existsSync(serverDir)) {
-    throw new Error(`Directory does not exist: ${serverDir}`);
-  }
-
-  const imageFiles = getAllImageFiles(serverDir);
-  console.log(`📁 Found ${imageFiles.length} image files across all subfolders.`);
-
+export const syncImagesFromPayload = async (imageFiles = []) => {
   let matchedCount = 0;
   let updatedCount = 0;
   let unmatchedCount = 0;
@@ -228,6 +220,7 @@ export const syncServerFolderToStyles = async (serverDir = DEFAULT_SERVER_DIR) =
         }
 
         const ktsToUpdate = detectedKT ? [detectedKT] : ['18KT', '20KT', '22KT'];
+        let lastTargetSlot = detectedSlot || 1;
 
         ktsToUpdate.forEach((k) => {
           if (!style.images[k]) style.images[k] = [];
@@ -299,42 +292,44 @@ export const syncServerFolderToStyles = async (serverDir = DEFAULT_SERVER_DIR) =
             style.images[k].push(slotPayload);
           }
           style.images[k].sort((a, b) => a.slot - b.slot);
+          
+          lastTargetSlot = targetSlot;
         });
 
         style.markModified('images');
         style.pendingKts = calculateStylePendingKts(style);
         await style.save();
         updatedCount++;
-      }
 
-      // Record in StyleImage collection as Matched
-      await StyleImage.findOneAndUpdate(
-        { styleCode: style.styleCode, slot: targetSlot },
-        {
-          originalFileName: file.filename,
-          folderPath: path.dirname(file.relativePath),
+        // Record in StyleImage collection as Matched
+        await StyleImage.findOneAndUpdate(
+          { styleCode: style.styleCode, slot: lastTargetSlot },
+          {
+            originalFileName: file.filename,
+            folderPath: path.dirname(file.relativePath),
+            styleCode: style.styleCode,
+            kt: finalKT || '',
+            slot: lastTargetSlot,
+            imageUrl,
+            storageKey: file.relativePath,
+            fileSize: file.size,
+            status: 'Matched',
+            errorReason: ''
+          },
+          { upsert: true, new: true }
+        );
+
+        matchedDetails.push({
           styleCode: style.styleCode,
-          kt: finalKT,
-          slot: targetSlot,
+          categoryName: style.categoryName,
+          purity: style.purity,
           imageUrl,
-          storageKey: file.relativePath,
-          fileSize: file.size,
-          status: 'Matched',
-          errorReason: ''
-        },
-        { upsert: true, new: true }
-      );
+          slot: lastTargetSlot,
+          file: file.relativePath
+        });
 
-      matchedDetails.push({
-        styleCode: style.styleCode,
-        categoryName: style.categoryName,
-        purity: style.purity,
-        imageUrl,
-        slot: targetSlot,
-        file: file.relativePath
-      });
-
-      console.log(`✅ Matched [${style.styleCode}] (${style.categoryName}) Slot ${targetSlot} ➔ ${imageUrl}`);
+        console.log(`✅ Matched [${style.styleCode}] (${style.categoryName}) Slot ${lastTargetSlot} ➔ ${imageUrl}`);
+      }
     } catch (fileErr) {
       console.error(`[SyncServerImages Error on ${file.relativePath}]:`, fileErr);
       unmatchedCount++;
@@ -355,6 +350,22 @@ export const syncServerFolderToStyles = async (serverDir = DEFAULT_SERVER_DIR) =
     matchedDetails,
     unmatchedDetails
   };
+};
+
+/**
+ * Sync all images from local server folder directly into MongoDB Style records
+ */
+export const syncServerFolderToStyles = async (serverDir = DEFAULT_SERVER_DIR) => {
+  console.log(`\n🔍 [SyncServerImages]: Scanning folder: ${serverDir}`);
+
+  if (!fs.existsSync(serverDir)) {
+    throw new Error(`Directory does not exist: ${serverDir}`);
+  }
+
+  const imageFiles = getAllImageFiles(serverDir);
+  console.log(`📁 Found ${imageFiles.length} image files across all subfolders.`);
+
+  return await syncImagesFromPayload(imageFiles);
 };
 
 // Standalone execution handler

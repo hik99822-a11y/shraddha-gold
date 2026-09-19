@@ -4,7 +4,7 @@ import Category from '../models/Category.js';
 import CategoryGroup from '../models/CategoryGroup.js';
 import { matchAndAssignImage } from '../services/imageMatchingService.js';
 import { generateStylesPdf } from '../services/pdfGeneratorService.js';
-import { syncServerFolderToStyles } from '../utils/syncServerImages.js';
+import { syncServerFolderToStyles, syncImagesFromPayload } from '../utils/syncServerImages.js';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
@@ -607,3 +607,41 @@ export const syncDesktopServerImages = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Receive sync payload from external Agent script
+ * @route   POST /api/admin/style-images/agent-sync
+ * @access  Public (Protected by secret header)
+ */
+export const syncAgentImages = async (req, res) => {
+  try {
+    const providedSecret = req.headers['x-agent-secret'];
+    const expectedSecret = process.env.AGENT_SYNC_SECRET || 'shraddha-gold-sync-secret-2026';
+
+    if (providedSecret !== expectedSecret) {
+      return res.status(401).json({ success: false, message: 'Unauthorized agent' });
+    }
+
+    const { imageFiles } = req.body;
+    if (!imageFiles || !Array.isArray(imageFiles)) {
+      return res.status(400).json({ success: false, message: 'Invalid payload format' });
+    }
+
+    const result = await syncImagesFromPayload(imageFiles);
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully processed ${result.totalScanned} images (${result.matchedCount} matched & updated in database)`,
+      ...result
+    });
+
+  } catch (error) {
+    console.error('[syncAgentImages Error]:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to sync agent images',
+      error: error.message
+    });
+  }
+};
+
