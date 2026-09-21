@@ -285,13 +285,27 @@ export const generateStylesPdf = async ({
 
   const uploadsRoot = process.env.DESKTOP_SERVER_DIR || '/Users/hardik/Desktop/server';
 
-  // Pre-process product entries asynchronously with image optimization based on quality
-  const productEntries = [];
-  for (const style of styles) {
+  // Helper for batch processing to massively speed up PDF generation
+  const processInBatches = async (itemsArray, batchSize, processFn) => {
+    const results = [];
+    for (let i = 0; i < itemsArray.length; i += batchSize) {
+      const batch = itemsArray.slice(i, i + batchSize);
+      const batchResults = await Promise.all(batch.map(processFn));
+      results.push(...batchResults);
+    }
+    return results;
+  };
+
+  // Pre-process product entries asynchronously in parallel batches
+  const productEntries = await processInBatches(styles, 15, async (style) => {
     const detectedKt = extractPurity(style);
     const validImages = resolveStyleImages(style, detectedKt);
     const rawImgUrl = validImages.length > 0 ? validImages[0].url : (style.imageUrl || null);
-    const resolvedPath = await resolveImagePath(rawImgUrl, uploadsRoot);
+    
+    // Strip ?v= from URL before processing
+    const cleanUrl = rawImgUrl ? rawImgUrl.split('?')[0] : null;
+    
+    const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
     let optimizedPath = null;
     if (resolvedPath) {
       optimizedPath = await optimizeImageForQuality(resolvedPath, quality);
@@ -306,7 +320,7 @@ export const generateStylesPdf = async ({
       ktText = `${detectedKt}${style.item}`;
     }
 
-    productEntries.push({
+    return {
       style,
       kt: detectedKt,
       ktText,
@@ -316,8 +330,8 @@ export const generateStylesPdf = async ({
       grossWeight: extractGrossWeight(style),
       netWeight: extractNetWeight(style),
       categoryName: style.categoryName || 'Fine Jewellery'
-    });
-  }
+    };
+  });
 
   return new Promise((resolve, reject) => {
     try {
@@ -579,6 +593,28 @@ export const generateOrderPdf = async (order) => {
           .text(phoneText, rightX, startY + 31);
       };
 
+      // PRE-LOAD ALL IMAGES IN PARALLEL BATCHES
+      const processInBatches = async (itemsArray, batchSize, processFn) => {
+        const results = [];
+        for (let i = 0; i < itemsArray.length; i += batchSize) {
+          const batch = itemsArray.slice(i, i + batchSize);
+          const batchResults = await Promise.all(batch.map(processFn));
+          results.push(...batchResults);
+        }
+        return results;
+      };
+
+      // uploadsRoot is already declared at the top of generateOrderPdf
+
+      const enrichedItems = await processInBatches(items, 15, async (item) => {
+        const cleanUrl = item.imageUrl ? item.imageUrl.split('?')[0] : null;
+        const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
+        return {
+          ...item,
+          preloadedImagePath: resolvedPath
+        };
+      });
+
       // --- 3. PRODUCT ITEM RENDERER ---
       const drawProductItem = async (item, startY, imageSize = 195) => {
         const imageX = Math.round((doc.page.width - imageSize) / 2);
@@ -588,52 +624,14 @@ export const generateOrderPdf = async (order) => {
         doc.roundedRect(imageX, imageY, imageSize, imageSize, 8).fillAndStroke('#fbfdfc', '#B1D1CB');
 
         let hasImage = false;
-        if (item.imageUrl) {
+        if (item.preloadedImagePath && fs.existsSync(item.preloadedImagePath)) {
           try {
-            let fullImgPath;
-            const desktopServerDir = process.env.DESKTOP_SERVER_DIR || '/Users/hardik/Desktop/server';
-            const desktopServerUrl = process.env.DESKTOP_SERVER_URL;
-            const isUploads = item.imageUrl.startsWith('/uploads/');
-            const isServerImages = item.imageUrl.startsWith('/server-images/');
-
-            if (isUploads || isServerImages) {
-              if (desktopServerUrl) {
-                const remotePath = isUploads ? item.imageUrl.replace('/uploads', '') : item.imageUrl.replace('/server-images', '');
-                const remoteUrl = `${desktopServerUrl}${remotePath}`;
-                const tempOptimizedDir = path.join(pdfsDir, 'cache');
-                if (!fs.existsSync(tempOptimizedDir)) fs.mkdirSync(tempOptimizedDir, { recursive: true });
-                const tempPath = path.join(tempOptimizedDir, 'temp_ord_' + Date.now() + '_' + path.basename(item.imageUrl));
-                try {
-                  const response = await fetch(remoteUrl);
-                  if (response.ok) {
-                    const buffer = await response.arrayBuffer();
-                    fs.writeFileSync(tempPath, Buffer.from(buffer));
-                    fullImgPath = tempPath;
-
-                    setTimeout(() => {
-                      if (fs.existsSync(tempPath)) {
-                        try { fs.unlinkSync(tempPath); } catch (e) {}
-                      }
-                    }, 5 * 60 * 1000);
-                  }
-                } catch (e) { /* ignore */ }
-              } else {
-                const localPathPart = isUploads ? item.imageUrl.replace('/uploads/', '') : item.imageUrl.replace('/server-images/', '');
-                fullImgPath = path.join(desktopServerDir, localPathPart);
-              }
-            } else {
-              const cleanUrl = item.imageUrl.startsWith('/') ? item.imageUrl.slice(1) : item.imageUrl;
-              fullImgPath = path.join(uploadsRoot, cleanUrl);
-            }
-
-            if (fullImgPath && fs.existsSync(fullImgPath)) {
-              doc.image(fullImgPath, imageX + 6, imageY + 6, {
-                fit: [imageSize - 12, imageSize - 12],
-                align: 'center',
-                valign: 'center'
-              });
-              hasImage = true;
-            }
+            doc.image(item.preloadedImagePath, imageX + 6, imageY + 6, {
+              fit: [imageSize - 12, imageSize - 12],
+              align: 'center',
+              valign: 'center'
+            });
+            hasImage = true;
           } catch (e) {
             // Ignore image load error
           }
@@ -702,7 +700,7 @@ export const generateOrderPdf = async (order) => {
         doc.fillColor('#13392e').fontSize(15).font('Helvetica-Bold')
           .text('No Items Registered in Order', { align: 'center' });
       } else {
-        const totalItems = items.length;
+        const totalItems = enrichedItems.length;
         const totalPages = Math.ceil(totalItems / 2);
 
         for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
@@ -716,7 +714,7 @@ export const generateOrderPdf = async (order) => {
           const isFirstPage = (pageIdx === 0);
           const isLastPage = (pageIdx === totalPages - 1);
           const pageStartIndex = pageIdx * 2;
-          const pageItems = items.slice(pageStartIndex, pageStartIndex + 2);
+          const pageItems = enrichedItems.slice(pageStartIndex, pageStartIndex + 2);
           const numItemsOnPage = pageItems.length;
 
           // Order & Client Dossier strictly on Page 1
