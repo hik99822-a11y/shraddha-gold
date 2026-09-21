@@ -2,7 +2,7 @@ import React from 'react';
 import { ShoppingBag, X, Trash2, Plus, Minus, ArrowRight, Gem, AlertCircle, Sparkles } from 'lucide-react';
 import './CartDrawer.css';
 
-const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const API_BASE = 'https://api.shraddhagold.com';
 
 const CartDrawer = ({
   isOpen,

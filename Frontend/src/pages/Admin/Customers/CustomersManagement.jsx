@@ -53,7 +53,7 @@ import './CustomersManagement.css';
 import { formatKtLabel } from '../../../utils/ktUtils.js';
 import CustomSelect from '../../../components/common/CustomSelect.jsx';
 
-const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const API_BASE = 'https://api.shraddhagold.com';
 
 const formatTimeDisplay = (timeStr) => {
   if (!timeStr) return '10:00 AM';

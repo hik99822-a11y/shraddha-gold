@@ -44,7 +44,7 @@ import '../AdminCommon.css';
 import { formatKtLabel, extractUniqueKtsFromStyles, getStylePurity, extractKtFromItem, getPendingKtsForStyle, hasPhotosForKt, isKtPendingForStyle } from '../../../utils/ktUtils.js';
 import CustomSelect from '../../../components/common/CustomSelect.jsx';
 
-const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const API_BASE = 'https://api.shraddhagold.com';
 
 // Helper methods to calculate filled image counts
 const getImagesForKt = (style, kt) => {

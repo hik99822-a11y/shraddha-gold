@@ -59,7 +59,7 @@ import {
   getPrimaryImageUrl
 } from '../../utils/ktUtils.js';
 
-const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const API_BASE = 'https://api.shraddhagold.com';
 
 /**
  * Dynamic Excel stock value extractors
