@@ -244,6 +244,14 @@ export const adminApi = {
     request('/admin/pdf-compress', {
       method: 'POST',
       body: formData
+    }),
+
+  // 7. System Config
+  getSystemConfig: () => request('/admin/config', { method: 'GET' }),
+  updateSystemConfig: (key, value) =>
+    request('/admin/config', {
+      method: 'POST',
+      body: JSON.stringify({ key, value })
     })
 };
 

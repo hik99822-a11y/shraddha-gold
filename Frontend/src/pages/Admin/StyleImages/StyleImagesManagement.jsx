@@ -35,7 +35,8 @@ import {
   Lock,
   SlidersHorizontal,
   Camera,
-  FileText
+  FileText,
+  Settings
 } from 'lucide-react';
 import { adminApi } from '../../../services/api';
 import AdminConfirmModal from '../components/AdminConfirmModal';
@@ -133,6 +134,11 @@ const StyleImagesManagement = () => {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfJobResult, setPdfJobResult] = useState(null);
   const [pdfQuality, setPdfQuality] = useState('original');
+
+  // Remote Server Config State
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [configDesktopUrl, setConfigDesktopUrl] = useState('');
+  const [configSaving, setConfigSaving] = useState(false);
 
   // Reliable cross-origin blob download helper
   const downloadFileFromUrl = async (url, fileName) => {
@@ -284,6 +290,45 @@ const StyleImagesManagement = () => {
       })
       .catch((err) => console.warn('Could not fetch detected KTs:', err.message));
   }, []);
+
+  // ==========================================
+  // Remote Server Config Handlers
+  // ==========================================
+  const fetchSystemConfig = async () => {
+    try {
+      const res = await adminApi.getSystemConfig();
+      if (res.success && res.config) {
+        setConfigDesktopUrl(res.config.DESKTOP_SERVER_URL || '');
+      }
+    } catch (err) {
+      console.error('Failed to load system config:', err);
+    }
+  };
+
+  const handleOpenConfigModal = () => {
+    setConfigModalOpen(true);
+    fetchSystemConfig();
+  };
+
+  const handleSaveConfig = async () => {
+    try {
+      setConfigSaving(true);
+      const res = await adminApi.updateSystemConfig('DESKTOP_SERVER_URL', configDesktopUrl);
+      if (res.success) {
+        setSyncToast({
+          type: 'success',
+          message: 'Remote Server URL saved successfully!'
+        });
+        setConfigModalOpen(false);
+      }
+    } catch (err) {
+      console.error('Failed to save config:', err);
+      alert(err.message || 'Failed to save config');
+    } finally {
+      setConfigSaving(false);
+      setTimeout(() => setSyncToast(null), 3000);
+    }
+  };
 
   // Direct Slot Upload Handler (Manual upload applies ONLY to the selected KT)
   const handleDirectSlotUpload = async (styleId, kt, slot, file) => {
@@ -1139,6 +1184,15 @@ const StyleImagesManagement = () => {
         >
           {copiedDefaultLink ? <Check size={14} className="text-emerald-700" /> : <Copy size={14} />}
           <span>{copiedDefaultLink ? 'Copied!' : 'Copy Master Link'}</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleOpenConfigModal}
+          className="btn-outline-brand"
+          title="Configure Cloudflare Tunnel URL for Remote Image Server"
+        >
+          <Settings size={14} />
+          <span>Remote Server Config</span>
         </button>
         <button
           type="button"
@@ -2421,6 +2475,111 @@ const StyleImagesManagement = () => {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remote Server Config Modal */}
+      {configModalOpen && (
+        <div className="admin-modal-backdrop" onClick={() => setConfigModalOpen(false)}>
+          <div className="catalog-modal-card mx-3 sm:mx-auto max-w-lg w-full relative overflow-hidden" 
+               style={{ backgroundColor: '#ffffff', borderRadius: '24px', boxShadow: '0 25px 60px -12px rgba(25, 36, 26, 0.35), 0 12px 24px -8px rgba(25, 36, 26, 0.18)' }} 
+               onClick={(e) => e.stopPropagation()}>
+            
+            {/* Header */}
+            <div className="flex justify-between items-start" style={{ padding: '24px 24px 16px 24px' }}>
+              <div className="flex" style={{ gap: '16px' }}>
+                <div className="flex items-center justify-center bg-white shadow-sm" 
+                     style={{ width: '48px', height: '48px', borderRadius: '14px', border: '1px solid #dcebe3', color: '#71a188' }}>
+                  <Settings size={24} strokeWidth={2} className="animate-spin" style={{ animationDuration: '8s' }} />
+                </div>
+                <div>
+                  <h3 className="font-bold tracking-tight" style={{ fontSize: '19px', color: '#19241A', lineHeight: '1.2' }}>Remote Image Server</h3>
+                  <p className="font-medium" style={{ fontSize: '13px', color: '#8b9fa4', marginTop: '2px' }}>Live Cloudflare Tunnel Configuration</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConfigModalOpen(false)}
+                className="transition-colors"
+                style={{ padding: '4px', color: '#96a9b5', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                onMouseOver={(e) => e.currentTarget.style.color = '#19241A'}
+                onMouseOut={(e) => e.currentTarget.style.color = '#96a9b5'}
+                title="Close"
+              >
+                <X size={20} strokeWidth={2.5} />
+              </button>
+            </div>
+            
+            <div style={{ padding: '0 24px 24px 24px' }}>
+
+              {/* Input Section */}
+              <div style={{ marginBottom: '32px' }}>
+                <label className="block font-bold" style={{ fontSize: '14px', color: '#111827', marginBottom: '8px' }}>
+                  Active Tunnel URL
+                </label>
+                <div className="flex items-stretch overflow-hidden shadow-sm transition-all" 
+                     style={{ borderRadius: '12px', border: '1px solid #d2dbd7' }}>
+                  <div className="flex items-center justify-center" 
+                       style={{ padding: '0 16px', backgroundColor: '#f2f7f4', borderRight: '1px solid #d2dbd7', color: '#71a188' }}>
+                    <Lock size={18} strokeWidth={2.5} />
+                  </div>
+                  <input
+                    type="text"
+                    value={configDesktopUrl}
+                    onChange={(e) => setConfigDesktopUrl(e.target.value)}
+                    placeholder="https://your-tunnel.trycloudflare.com"
+                    className="w-full focus:outline-none font-medium"
+                    style={{ padding: '12px 16px', fontSize: '14px', color: '#374151', backgroundColor: '#ffffff', border: 'none' }}
+                  />
+                </div>
+              </div>
+              
+              {/* Footer Buttons */}
+              <div className="flex items-center justify-end" style={{ gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setConfigModalOpen(false)}
+                  className="font-semibold transition-colors shadow-sm"
+                  style={{ padding: '10px 24px', borderRadius: '12px', fontSize: '14px', border: '1px solid #d2dbd7', color: '#374151', backgroundColor: '#ffffff', cursor: 'pointer' }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveConfig}
+                  disabled={configSaving}
+                  className="font-semibold transition-colors flex items-center shadow-sm"
+                  style={{ 
+                    gap: '8px',
+                    padding: '10px 24px', 
+                    borderRadius: '12px', 
+                    fontSize: '14px', 
+                    backgroundColor: '#b6d6c6', 
+                    color: '#1e3c2b', 
+                    border: 'none',
+                    cursor: configSaving ? 'not-allowed' : 'pointer',
+                    opacity: configSaving ? 0.7 : 1 
+                  }}
+                  onMouseOver={(e) => !configSaving && (e.currentTarget.style.backgroundColor = '#a6ccb9')}
+                  onMouseOut={(e) => !configSaving && (e.currentTarget.style.backgroundColor = '#b6d6c6')}
+                >
+                  {configSaving ? (
+                    <>
+                      <RefreshCw size={16} className="animate-spin" strokeWidth={2.5} />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={16} strokeWidth={2.5} />
+                      Save Configuration
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
