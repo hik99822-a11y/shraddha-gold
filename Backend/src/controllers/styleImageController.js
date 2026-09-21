@@ -159,8 +159,8 @@ export const uploadSlotImage = async (req, res) => {
         
         const data = await response.json();
         if (data.success && data.relativePath) {
-          // Point the image URL to the Windows streaming route
-          imageUrl = `/server-images/${data.relativePath}`;
+          // Point the image URL to the Windows streaming route with a timestamp to break browser cache on replace
+          imageUrl = `/server-images/${data.relativePath}?v=${Date.now()}`;
           isRealImage = true;
           source = 'remote_manual_upload';
         }
@@ -394,16 +394,44 @@ export const deleteSlotImage = async (req, res) => {
     const uploadsDir = process.env.DESKTOP_SERVER_DIR || '/Users/hardik/Desktop/server';
     const styleImagesDir = path.join(uploadsDir, 'style-images');
 
-    imagesToClean.forEach((img) => {
-      if (img?.url && img.url.startsWith('/uploads/style-images/')) {
-        const fileName = path.basename(img.url);
-        const diskPath = path.join(styleImagesDir, fileName);
-        if (fs.existsSync(diskPath)) {
+    imagesToClean.forEach(async (img) => {
+      if (img?.url) {
+        if (img.url.startsWith('/uploads/style-images/')) {
+          const fileName = path.basename(img.url);
+          const diskPath = path.join(styleImagesDir, fileName);
+          if (fs.existsSync(diskPath)) {
+            try {
+              fs.unlinkSync(diskPath);
+              console.log(`[deleteSlotImage] Deleted disk file: ${diskPath}`);
+            } catch (e) {
+              console.warn(`[deleteSlotImage] Failed to delete disk file:`, e.message);
+            }
+          }
+        } else if (img.url.startsWith('/server-images/') && process.env.DESKTOP_SERVER_URL) {
+          // Forward the delete request to the Windows Server to maintain 0% storage
           try {
-            fs.unlinkSync(diskPath);
-            console.log(`[deleteSlotImage] Deleted disk file: ${diskPath}`);
-          } catch (e) {
-            console.warn(`[deleteSlotImage] Failed to delete disk file:`, e.message);
+            // Strip any query parameters (like ?v=timestamp) so Windows can find the actual file
+            const relativePath = img.url.replace('/server-images/', '').split('?')[0];
+            
+            // SECURITY CHECK: Only delete physical files if they were manually uploaded to the 'style-images' folder.
+            // NEVER delete master CAD images from other directories!
+            if (relativePath.startsWith('style-images/')) {
+              const targetUrl = `${process.env.DESKTOP_SERVER_URL.replace(/\/+$/, '')}/image`;
+              
+              await fetch(targetUrl, {
+                method: 'DELETE',
+                headers: {
+                  'File-Path': encodeURIComponent(relativePath),
+                  'bypass-tunnel-reminder': 'true',
+                  'User-Agent': 'ShraddhaGold-ReverseProxy/1.0'
+                }
+              });
+              console.log(`[deleteSlotImage] Proxied delete request for manual remote file: ${relativePath}`);
+            } else {
+              console.log(`[deleteSlotImage] Skipped physical deletion of master CAD image: ${relativePath}`);
+            }
+          } catch (proxyErr) {
+            console.warn(`[deleteSlotImage] Failed to proxy delete request for remote file:`, proxyErr.message);
           }
         }
       }
@@ -482,7 +510,7 @@ export const processBulkImageChunk = async (req, res) => {
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.relativePath) {
-              imageUrl = `/server-images/${data.relativePath}`;
+              imageUrl = `/server-images/${data.relativePath}?v=${Date.now()}`;
               source = 'remote_manual_upload';
             }
           }
