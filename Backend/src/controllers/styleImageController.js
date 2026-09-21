@@ -5,6 +5,7 @@ import CategoryGroup from '../models/CategoryGroup.js';
 import { matchAndAssignImage } from '../services/imageMatchingService.js';
 import { generateStylesPdf } from '../services/pdfGeneratorService.js';
 import { syncServerFolderToStyles, syncImagesFromPayload } from '../utils/syncServerImages.js';
+import SystemConfig from '../models/SystemConfig.js';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
@@ -128,15 +129,58 @@ export const uploadSlotImage = async (req, res) => {
 
     if (!style.images) style.images = {};
 
-    const imageUrl = `/uploads/style-images/${req.file.filename}`;
+    let imageUrl = `/uploads/style-images/${req.file.filename}`;
+    let isRealImage = true;
+    let source = 'manual_upload';
+
+    // Reverse Proxy Upload if DESKTOP_SERVER_URL is set
+    if (process.env.DESKTOP_SERVER_URL) {
+      try {
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const targetUrl = `${process.env.DESKTOP_SERVER_URL.replace(/\/+$/, '')}/upload`;
+        
+        const response = await fetch(targetUrl, {
+          method: 'POST',
+          headers: {
+            'File-Name': encodeURIComponent(req.file.originalname),
+            'Style-Code': encodeURIComponent(style.styleCode || 'Misc'),
+            'Kt-Purity': encodeURIComponent(kt),
+            'Image-Slot': encodeURIComponent(targetSlot),
+            'Content-Type': 'application/octet-stream',
+            'bypass-tunnel-reminder': 'true',
+            'User-Agent': 'ShraddhaGold-ReverseProxy/1.0'
+          },
+          body: fileBuffer
+        });
+
+        if (!response.ok) {
+          throw new Error(`Windows upload failed: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        if (data.success && data.relativePath) {
+          // Point the image URL to the Windows streaming route
+          imageUrl = `/server-images/${data.relativePath}`;
+          isRealImage = true;
+          source = 'remote_manual_upload';
+        }
+      } catch (proxyErr) {
+        console.error('[Reverse Proxy Upload Error]:', proxyErr.message);
+        // Fallback to local AWS upload if Windows is unreachable
+      } finally {
+        // ALWAYS delete the local temp file from AWS so it consumes 0% cloud storage!
+        try { fs.unlinkSync(req.file.path); } catch (e) {}
+      }
+    }
+
     const slotPayload = {
       slot: targetSlot,
       url: imageUrl,
       originalFileName: req.file.originalname,
-      storageKey: req.file.filename,
+      storageKey: req.file.filename, // We still keep the original filename reference
       uploadedAt: new Date(),
-      isRealImage: true,
-      source: 'manual_upload'
+      isRealImage: isRealImage,
+      source: source
     };
 
     const availableKts = await getActiveKtList();
@@ -414,7 +458,40 @@ export const processBulkImageChunk = async (req, res) => {
       const file = files[i];
       const relativePath = relativePaths[i] || '';
       const originalFileName = file.originalname;
-      const imageUrl = `/uploads/style-images/${file.filename}`;
+      let imageUrl = `/uploads/style-images/${file.filename}`;
+      let source = 'manual_upload';
+
+      // Reverse Proxy Upload if DESKTOP_SERVER_URL is set
+      if (process.env.DESKTOP_SERVER_URL) {
+        try {
+          const fileBuffer = fs.readFileSync(file.path);
+          const targetUrl = `${process.env.DESKTOP_SERVER_URL.replace(/\/+$/, '')}/upload`;
+          
+          const response = await fetch(targetUrl, {
+            method: 'POST',
+            headers: {
+              'File-Name': encodeURIComponent(originalFileName),
+              'Style-Code': encodeURIComponent('BulkUpload'),
+              'Content-Type': 'application/octet-stream',
+              'bypass-tunnel-reminder': 'true',
+              'User-Agent': 'ShraddhaGold-ReverseProxy/1.0'
+            },
+            body: fileBuffer
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.relativePath) {
+              imageUrl = `/server-images/${data.relativePath}`;
+              source = 'remote_manual_upload';
+            }
+          }
+        } catch (proxyErr) {
+          console.error('[Bulk Reverse Proxy Upload Error]:', proxyErr.message);
+        } finally {
+          try { fs.unlinkSync(file.path); } catch (e) {}
+        }
+      }
 
       try {
         const result = await matchAndAssignImage({
@@ -423,7 +500,8 @@ export const processBulkImageChunk = async (req, res) => {
           relativePath,
           batchId,
           storageKey: file.filename,
-          imageUrl
+          imageUrl,
+          source // Injecting source to identify remote uploads if needed
         });
 
         if (result.success && result.status === 'Matched') {
@@ -622,7 +700,24 @@ export const syncAgentImages = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized agent' });
     }
 
-    const { imageFiles } = req.body;
+    const { imageFiles, desktopServerUrl } = req.body;
+    if (desktopServerUrl && typeof desktopServerUrl === 'string') {
+      const cleanUrl = desktopServerUrl.trim().replace(/\/+$/, '');
+      process.env.DESKTOP_SERVER_URL = cleanUrl;
+      console.log(`[syncAgentImages] 🌐 Updated live DESKTOP_SERVER_URL to: ${cleanUrl}`);
+      
+      // Persist to Database so it survives restarts
+      try {
+        await SystemConfig.findOneAndUpdate(
+          { key: 'DESKTOP_SERVER_URL' },
+          { value: cleanUrl },
+          { upsert: true }
+        );
+      } catch (dbErr) {
+        console.error('[syncAgentImages] Failed to save URL to DB:', dbErr.message);
+      }
+    }
+
     if (!imageFiles || !Array.isArray(imageFiles)) {
       return res.status(400).json({ success: false, message: 'Invalid payload format' });
     }
@@ -632,6 +727,7 @@ export const syncAgentImages = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `Successfully processed ${result.totalScanned} images (${result.matchedCount} matched & updated in database)`,
+      desktopServerUrl: process.env.DESKTOP_SERVER_URL,
       ...result
     });
 

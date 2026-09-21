@@ -57,7 +57,8 @@ export const matchAndAssignImage = async ({
   relativePath,
   batchId,
   storageKey,
-  imageUrl
+  imageUrl,
+  source = 'bulk_upload'
 }) => {
   const { candidate, detectedKT, detectedSlot } = parseImageMetadata(originalFileName, relativePath);
 
@@ -136,7 +137,9 @@ const escapeRegExp = (str) => {
     url: imageUrl,
     originalFileName,
     storageKey: storageKey || file?.filename || '',
-    uploadedAt: new Date()
+    uploadedAt: new Date(),
+    isRealImage: true,
+    source: source || 'bulk_upload'
   };
 
   // Assign image across all matching style entries/variants

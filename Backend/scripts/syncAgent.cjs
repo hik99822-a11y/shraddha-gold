@@ -4,12 +4,20 @@ const path = require('path');
 // ==========================================
 // CONFIGURATION: SET THESE ON THE WINDOWS PC
 // ==========================================
-const TARGET_FOLDER = "\\\\SRV\\gatisogttech\\SJEP IMAGES"; 
-// const API_URL = "http://lol-grad-advertisements-scheduling.trycloudflare.com/api/admin/style-images/agent-sync";
-const API_URL = "http://192.168.1.5:5000/api/admin/style-images/agent-sync"; // For local testing
+const TARGET_FOLDER = process.env.TARGET_FOLDER || "\\\\SRV\\gatisogttech\\SJEP IMAGES"; 
 
-// Optional security key to prevent unauthorized syncs
-const AGENT_SYNC_SECRET = "shraddha-gold-sync-secret-2026";
+// Live EC2 Backend API (Accessible directly over internet)
+const API_URL = process.env.API_URL || "http://13.126.225.2:5000/api/admin/style-images/agent-sync";
+
+// Optional Cloudflare Tunnel URL passed as CLI argument
+// Usage: node scripts/syncAgent.cjs https://xxxx.trycloudflare.com
+let desktopServerUrl = null;
+if (process.argv[2] && process.argv[2].startsWith('http')) {
+  desktopServerUrl = process.argv[2].replace(/\/+$/, '');
+}
+
+// Security secret to authenticate agent with server
+const AGENT_SYNC_SECRET = process.env.AGENT_SYNC_SECRET || "shraddha-gold-sync-secret-2026";
 // ==========================================
 
 console.log("---------------------------------------------------");
@@ -72,39 +80,74 @@ const runSync = async () => {
         return;
     }
 
+    const CHUNK_SIZE = 500;
+    const totalChunks = Math.ceil(imageFiles.length / CHUNK_SIZE);
     console.log(`\n📤 Sending data to Live Server: ${API_URL}`);
+    console.log(`📦 Payload will be sent in ${totalChunks} chunks of ${CHUNK_SIZE} images.`);
+    if (desktopServerUrl) {
+        console.log(`🌐 Attaching Cloudflare Tunnel URL: ${desktopServerUrl}`);
+    }
+
+    let totalScanned = 0;
+    let totalMatched = 0;
+    let totalUpdated = 0;
+    let totalUnmatched = 0;
 
     try {
-        // Send data in chunks if it's too large, but for now we send all at once
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-agent-secret': AGENT_SYNC_SECRET
-            },
-            body: JSON.stringify({ imageFiles })
-        });
+        for (let i = 0; i < imageFiles.length; i += CHUNK_SIZE) {
+            const chunk = imageFiles.slice(i, i + CHUNK_SIZE);
+            const payload = { imageFiles: chunk };
+            if (desktopServerUrl) {
+                payload.desktopServerUrl = desktopServerUrl;
+            }
 
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`Server returned status ${response.status}: ${errText}`);
+            const currentChunkNum = Math.floor(i / CHUNK_SIZE) + 1;
+            console.log(`\n⏳ Sending chunk ${currentChunkNum} of ${totalChunks}... (${chunk.length} images)`);
+
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-agent-secret': AGENT_SYNC_SECRET
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Server returned status ${response.status} on chunk ${currentChunkNum}: ${errText}`);
+            }
+
+            const result = await response.json();
+            console.log(`✅ Chunk ${currentChunkNum} Success: ${result.matchedCount || 0} matched`);
+            
+            totalScanned += result.totalScanned || 0;
+            totalMatched += result.matchedCount || 0;
+            totalUpdated += result.updatedCount || 0;
+            totalUnmatched += result.unmatchedCount || 0;
         }
 
-        const result = await response.json();
-        
         console.log("\n===========================================");
         console.log("🎉 SYNC COMPLETE!");
         console.log("===========================================");
-        console.log(`- Total Files Sent:    ${result.totalScanned}`);
-        console.log(`- Matched Styles:      ${result.matchedCount}`);
-        console.log(`- Updated in Database: ${result.updatedCount}`);
-        console.log(`- Unmatched Files:     ${result.unmatchedCount}`);
+        console.log(`- Total Files Sent:    ${totalScanned}`);
+        console.log(`- Matched Styles:      ${totalMatched}`);
+        console.log(`- Updated in Database: ${totalUpdated}`);
+        console.log(`- Unmatched Files:     ${totalUnmatched}`);
+        if (desktopServerUrl) {
+            console.log(`- Live Image URL:      ${desktopServerUrl}`);
+        }
         console.log("===========================================\n");
         
     } catch (err) {
         console.error("\n❌ FAILED TO SYNC WITH SERVER!");
-        console.error(err.message);
+        console.error("Error Message:", err.message);
+        if (err.cause) {
+            console.error("Error Cause:", err.cause);
+        }
+        console.error("Stack Trace:", err.stack);
     }
 };
 
 runSync();
+

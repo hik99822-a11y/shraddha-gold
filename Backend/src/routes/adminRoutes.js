@@ -125,4 +125,11 @@ import { compressPdf } from '../controllers/pdfCompressController.js';
 
 router.post('/pdf-compress', pdfUpload.single('file'), compressPdf);
 
+// 7. System Config
+import { getSystemConfig, updateSystemConfig } from '../controllers/systemConfigController.js';
+
+router.get('/config', getSystemConfig);
+router.post('/config', updateSystemConfig);
+
 export default router;
+

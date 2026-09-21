@@ -9,8 +9,10 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Base upload directories (Forced outside project folder)
-const uploadsDir = process.env.DESKTOP_SERVER_DIR || '/Users/hardik/Desktop/server';
+// Base upload directories (Local fallback on AWS Linux if network share is remote)
+const uploadsDir = (process.env.DESKTOP_SERVER_DIR && fs.existsSync(process.env.DESKTOP_SERVER_DIR))
+  ? process.env.DESKTOP_SERVER_DIR
+  : (process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads'));
 const styleImagesDir = path.join(uploadsDir, 'style-images');
 const excelDir = path.join(uploadsDir, 'excel');
 const pdfsDir = path.join(uploadsDir, 'pdfs');

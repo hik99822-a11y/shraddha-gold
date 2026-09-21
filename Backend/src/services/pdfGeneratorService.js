@@ -12,7 +12,9 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const uploadsDir = process.env.DESKTOP_SERVER_DIR || '/Users/hardik/Desktop/server';
+const uploadsDir = (process.env.DESKTOP_SERVER_DIR && fs.existsSync(process.env.DESKTOP_SERVER_DIR))
+  ? process.env.DESKTOP_SERVER_DIR
+  : (process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads'));
 const pdfsDir = path.join(uploadsDir, 'pdfs');
 
 if (!fs.existsSync(pdfsDir)) {
@@ -74,7 +76,12 @@ const resolveImagePath = async (imgUrl, uploadsRoot) => {
         if (!fs.existsSync(tempOptimizedDir)) fs.mkdirSync(tempOptimizedDir, { recursive: true });
         const tempPath = path.join(tempOptimizedDir, 'temp_cat_' + Date.now() + '_' + path.basename(imgUrl));
         try {
-          const response = await fetch(remoteUrl);
+          const response = await fetch(remoteUrl, {
+            headers: {
+              'bypass-tunnel-reminder': 'true',
+              'User-Agent': 'ShraddhaGold-PDFGenerator/1.0'
+            }
+          });
           if (response.ok) {
             const buffer = await response.arrayBuffer();
             fs.writeFileSync(tempPath, Buffer.from(buffer));
