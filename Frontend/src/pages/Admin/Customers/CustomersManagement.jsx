@@ -2048,7 +2048,7 @@ const CustomersManagement = () => {
                       </span>
                       <button
                         type="button"
-                        onClick={handleSelectAllCategories}
+                        onClick={formData.categoryAccess.length === categories.length ? handleClearAllCategories : handleSelectAllCategories}
                         className="btn-sub-action text-xs"
                       >
                         {formData.categoryAccess.length === categories.length ? 'Clear All' : 'Select All'}
