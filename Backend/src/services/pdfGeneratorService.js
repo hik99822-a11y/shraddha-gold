@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
@@ -119,10 +120,15 @@ const resolveImagePath = async (imgUrl, uploadsRoot) => {
  */
 const optimizeImageForQuality = async (imagePath, quality = 'original') => {
   if (!imagePath) return null;
-  try {
-    await fs.promises.access(imagePath, fs.constants.F_OK);
-  } catch {
-    return null;
+  
+  const isBuffer = Buffer.isBuffer(imagePath);
+
+  if (!isBuffer) {
+    try {
+      await fs.promises.access(imagePath, fs.constants.F_OK);
+    } catch {
+      return null;
+    }
   }
 
   const q = String(quality || 'original').toLowerCase().trim();
@@ -133,8 +139,14 @@ const optimizeImageForQuality = async (imagePath, quality = 'original') => {
   }
 
   try {
-    const ext = path.extname(imagePath).toLowerCase();
-    const hash = `${path.basename(imagePath, ext)}_${q}.jpg`;
+    let hash;
+    if (isBuffer) {
+      hash = `remote_img_${crypto.randomBytes(6).toString('hex')}_${q}.jpg`;
+    } else {
+      const ext = path.extname(imagePath).toLowerCase();
+      hash = `${path.basename(imagePath, ext)}_${q}.jpg`;
+    }
+    
     const tempOptimizedDir = path.join(uploadsDir, 'cache');
     if (!fs.existsSync(tempOptimizedDir)) {
       fs.mkdirSync(tempOptimizedDir, { recursive: true });
@@ -392,7 +404,11 @@ export const generateStylesPdf = async ({
             // Concurrently fetch buffer for the chunk entry
             if (entry.imgPath) {
               try {
-                entry.imgBuffer = await fs.promises.readFile(entry.imgPath);
+                if (Buffer.isBuffer(entry.imgPath)) {
+                  entry.imgBuffer = entry.imgPath;
+                } else {
+                  entry.imgBuffer = await fs.promises.readFile(entry.imgPath);
+                }
               } catch(e) { entry.imgBuffer = null; }
             }
             return entry;
@@ -760,7 +776,11 @@ export const generateOrderPdf = async (order, res) => {
             const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
             if (resolvedPath) {
               try {
-                item.imgBuffer = await fs.promises.readFile(resolvedPath);
+                if (Buffer.isBuffer(resolvedPath)) {
+                  item.imgBuffer = resolvedPath;
+                } else {
+                  item.imgBuffer = await fs.promises.readFile(resolvedPath);
+                }
               } catch (e) {}
             }
           }));

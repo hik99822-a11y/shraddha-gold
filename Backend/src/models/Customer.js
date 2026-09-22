@@ -101,6 +101,11 @@ const customerSchema = new mongoose.Schema(
           default: 0,
           min: 0
         },
+        validityDays: {
+          type: Number,
+          default: 1,
+          min: 1
+        },
         shareToken: {
           type: String,
           default: null,
@@ -162,6 +167,11 @@ const customerSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0
+    },
+    linkValidityDays: {
+      type: Number,
+      default: 1,
+      min: 1
     },
     // Customer Portal Tab Access Management
     panelTabAccess: {

@@ -128,6 +128,7 @@ export const createCustomer = async (req, res) => {
       linkShareType = 'Without Login',
       linkShareTime = '10:00',
       linkShareAfterDays = 0,
+      linkValidityDays = 1,
       createLoginAccount, // boolean
       username,
       password,
@@ -219,6 +220,7 @@ export const createCustomer = async (req, res) => {
       linkShareType: linkShareType === 'With Login' ? 'With Login' : 'Without Login',
       linkShareTime: linkShareTime ? linkShareTime.trim() : '10:00',
       linkShareAfterDays: !isNaN(parseInt(linkShareAfterDays, 10)) ? Math.max(0, parseInt(linkShareAfterDays, 10)) : 0,
+      linkValidityDays: !isNaN(parseInt(linkValidityDays, 10)) ? Math.max(1, parseInt(linkValidityDays, 10)) : 1,
       panelTabAccess: Array.isArray(panelTabAccess) ? panelTabAccess : ['ready', 'all']
     });
 
@@ -266,6 +268,7 @@ export const updateCustomer = async (req, res) => {
       linkShareType,
       linkShareTime,
       linkShareAfterDays,
+      linkValidityDays,
       panelTabAccess
     } = req.body;
 
@@ -323,6 +326,9 @@ export const updateCustomer = async (req, res) => {
     }
     if (linkShareAfterDays !== undefined) {
       customer.linkShareAfterDays = !isNaN(parseInt(linkShareAfterDays, 10)) ? Math.max(0, parseInt(linkShareAfterDays, 10)) : 0;
+    }
+    if (linkValidityDays !== undefined) {
+      customer.linkValidityDays = !isNaN(parseInt(linkValidityDays, 10)) ? Math.max(1, parseInt(linkValidityDays, 10)) : 1;
     }
     if (panelTabAccess !== undefined && Array.isArray(panelTabAccess)) {
       customer.panelTabAccess = panelTabAccess;
@@ -431,6 +437,9 @@ export const generateCustomerLink = async (req, res) => {
     let maxDelay = !isNaN(parseInt(customer.linkShareAfterDays, 10))
       ? Math.max(0, parseInt(customer.linkShareAfterDays, 10))
       : 0;
+    let targetValidityDays = !isNaN(parseInt(customer.linkValidityDays, 10))
+      ? Math.max(1, parseInt(customer.linkValidityDays, 10))
+      : 1;
     let targetShareTime = customer.linkShareTime || '10:00';
 
     if (Array.isArray(customer.categoryAccess) && customer.categoryAccess.length > 0) {
@@ -438,6 +447,7 @@ export const generateCustomerLink = async (req, res) => {
         const d = Number(ca.shareAfterDays || 0);
         if (d >= maxDelay) {
           maxDelay = d;
+          targetValidityDays = !isNaN(parseInt(ca.validityDays, 10)) ? Math.max(1, parseInt(ca.validityDays, 10)) : targetValidityDays;
           if (ca.shareTime) targetShareTime = ca.shareTime;
         }
       });
@@ -446,11 +456,11 @@ export const generateCustomerLink = async (req, res) => {
     const linkCreatedAt = new Date();
     const linkExpiresAt = new Date(linkCreatedAt.getTime());
     if (maxDelay === 0) {
-      // 0 days delay: link is valid for 24 hours from right now
-      linkExpiresAt.setTime(linkCreatedAt.getTime() + 24 * 60 * 60 * 1000);
+      // 0 days delay: link is valid for N days from right now
+      linkExpiresAt.setTime(linkCreatedAt.getTime() + targetValidityDays * 24 * 60 * 60 * 1000);
     } else {
       // N days delay: link dispatch is scheduled for N days at targetShareTime
-      // The link should expire 24 hours AFTER it is dispatched!
+      // The link should expire N days AFTER it is dispatched!
       const dispatchTime = new Date(linkCreatedAt.getTime());
       dispatchTime.setDate(dispatchTime.getDate() + maxDelay);
       
@@ -463,8 +473,8 @@ export const generateCustomerLink = async (req, res) => {
         dispatchTime.setTime(linkCreatedAt.getTime());
       }
       
-      // Expire 24 hours after the calculated dispatch time
-      linkExpiresAt.setTime(dispatchTime.getTime() + 24 * 60 * 60 * 1000);
+      // Expire validityDays after the calculated dispatch time
+      linkExpiresAt.setTime(dispatchTime.getTime() + targetValidityDays * 24 * 60 * 60 * 1000);
     }
 
     // Generate master token and store directly on customer
@@ -482,15 +492,16 @@ export const generateCustomerLink = async (req, res) => {
     if (Array.isArray(customer.categoryAccess) && customer.categoryAccess.length > 0) {
       customer.categoryAccess = customer.categoryAccess.map((ca) => {
         const catDelay = !isNaN(parseInt(ca.shareAfterDays, 10)) ? Math.max(0, parseInt(ca.shareAfterDays, 10)) : 0;
+        const catValidityDays = !isNaN(parseInt(ca.validityDays, 10)) ? Math.max(1, parseInt(ca.validityDays, 10)) : 1;
         const catShareTime = ca.shareTime || customer.linkShareTime || '10:00';
         const catExpiresAt = new Date(linkCreatedAt.getTime());
 
         if (catDelay === 0) {
-          // 0 days delay: valid for 24 hours from right now
-          catExpiresAt.setTime(linkCreatedAt.getTime() + 24 * 60 * 60 * 1000);
+          // 0 days delay: valid for N days from right now
+          catExpiresAt.setTime(linkCreatedAt.getTime() + catValidityDays * 24 * 60 * 60 * 1000);
         } else {
           // N days delay: link dispatch is scheduled for N days at catShareTime
-          // The link should expire 24 hours AFTER it is dispatched!
+          // The link should expire N days AFTER it is dispatched!
           const catDispatchTime = new Date(linkCreatedAt.getTime());
           catDispatchTime.setDate(catDispatchTime.getDate() + catDelay);
           
@@ -503,8 +514,8 @@ export const generateCustomerLink = async (req, res) => {
             catDispatchTime.setTime(linkCreatedAt.getTime());
           }
           
-          // Expire 24 hours after the scheduled dispatch time
-          catExpiresAt.setTime(catDispatchTime.getTime() + 24 * 60 * 60 * 1000);
+          // Expire validityDays after the scheduled dispatch time
+          catExpiresAt.setTime(catDispatchTime.getTime() + catValidityDays * 24 * 60 * 60 * 1000);
         }
 
         const catToken = crypto.randomBytes(16).toString('hex');
