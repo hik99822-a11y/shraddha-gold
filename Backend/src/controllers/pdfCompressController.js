@@ -94,9 +94,8 @@ export const compressPdf = async (req, res) => {
     
     // The backend serves the PDFs from /uploads directory
     // which maps to the local uploads directory or DESKTOP_SERVER_DIR
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const baseUrl = `${protocol}://${req.get('host')}`;
-    const fileUrl = `${baseUrl}/api/admin/pdf-compress/download?original=${path.basename(inputPath)}&compressed=${outputFilename}`;
+    // Return relative URL so frontend API wrapper can attach authentication token
+    const fileUrl = `/admin/pdf-compress/download?original=${path.basename(inputPath)}&compressed=${outputFilename}`;
     
     // Auto-cleanup after 30 minutes if not downloaded
     setTimeout(() => {
