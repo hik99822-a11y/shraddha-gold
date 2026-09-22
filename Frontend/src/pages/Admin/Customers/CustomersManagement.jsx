@@ -1152,9 +1152,31 @@ const CustomersManagement = () => {
       const res = await adminApi.generateCustomerPdf(customerPdfTarget._id, {
         quality: customerPdfQuality
       });
+      
       if (res.success && res.job) {
-        await downloadFileFromUrl(`${API_BASE}${res.job.fileUrl}`, res.job.fileName);
-        setCustomerPdfModalOpen(false);
+        const url = `${API_BASE}${res.job.fileUrl}`;
+        let ready = false;
+        let attempts = 0;
+        
+        // Poll until the backend finishes generating the PDF (indicated by 200 OK)
+        while (!ready && attempts < 60) {
+          try {
+            const check = await fetch(url, { method: 'HEAD' });
+            if (check.ok) ready = true;
+          } catch (e) {}
+          
+          if (!ready) {
+            await new Promise(r => setTimeout(r, 3000));
+            attempts++;
+          }
+        }
+        
+        if (ready) {
+          await downloadFileFromUrl(url, res.job.fileName);
+          setCustomerPdfModalOpen(false);
+        } else {
+          alert('PDF generation timed out or failed. Please try again.');
+        }
       }
     } catch (err) {
       alert(err.message || 'Failed to generate customer PDF');
@@ -1202,8 +1224,30 @@ const CustomersManagement = () => {
       const res = await adminApi.generateCustomerPdf(selectedCustomerForShare._id);
       if (res.success && res.job) {
         setPdfResult(res.job);
-        // Automatically download PDF to user's computer!
-        await downloadFileFromUrl(`${API_BASE}${res.job.fileUrl}`, res.job.fileName);
+        
+        const url = `${API_BASE}${res.job.fileUrl}`;
+        let ready = false;
+        let attempts = 0;
+        
+        // Poll until the backend finishes generating the PDF (indicated by 200 OK)
+        while (!ready && attempts < 60) {
+          try {
+            const check = await fetch(url, { method: 'HEAD' });
+            if (check.ok) ready = true;
+          } catch (e) {}
+          
+          if (!ready) {
+            await new Promise(r => setTimeout(r, 3000));
+            attempts++;
+          }
+        }
+
+        if (ready) {
+          // Automatically download PDF to user's computer!
+          await downloadFileFromUrl(url, res.job.fileName);
+        } else {
+          alert('PDF generation timed out or failed. Please try again.');
+        }
       }
     } catch (err) {
       alert(err.message || 'Failed to generate PDF');
