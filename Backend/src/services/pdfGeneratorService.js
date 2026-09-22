@@ -306,43 +306,6 @@ export const generateStylesPdf = async ({
   const q = String(quality || 'original').toLowerCase().trim();
   const dynamicBatchSize = (q === 'low' || q === 'medium' || q === '72dpi' || q === '150dpi' || q === 'original' || q === 'full' || q === 'none') ? 25 : 5;
 
-  // Pre-process product entries asynchronously in parallel batches
-  const productEntries = await processInBatches(styles, dynamicBatchSize, async (style) => {
-    const detectedKt = extractPurity(style);
-    const validImages = resolveStyleImages(style, detectedKt);
-    const rawImgUrl = validImages.length > 0 ? validImages[0].url : (style.imageUrl || null);
-    
-    // Strip ?v= from URL before processing
-    const cleanUrl = rawImgUrl ? rawImgUrl.split('?')[0] : null;
-    
-    const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
-    let optimizedPath = null;
-    if (resolvedPath) {
-      optimizedPath = await optimizeImageForQuality(resolvedPath, quality);
-    }
-
-    // Determine purity / karat label (e.g. 18KTR, 20KT, 22KT)
-    let ktText = detectedKt;
-    const rawPurity = style.rawData?.Purity || style.rawData?.Item;
-    if (rawPurity && String(rawPurity).trim()) {
-      ktText = String(rawPurity).trim();
-    } else if (style.item && !detectedKt.includes(style.item)) {
-      ktText = `${detectedKt}${style.item}`;
-    }
-
-    return {
-      style,
-      kt: detectedKt,
-      ktText,
-      imgPath: optimizedPath,
-      styleCode: (style.styleCode || '').trim() || getStyleDisplayCode(style),
-      displayCode: getStyleDisplayCode(style),
-      grossWeight: extractGrossWeight(style),
-      netWeight: extractNetWeight(style),
-      categoryName: style.categoryName || 'Fine Jewellery'
-    };
-  });
-
   return new Promise(async (resolve, reject) => {
     try {
       const doc = new PDFDocument({
@@ -362,6 +325,43 @@ export const generateStylesPdf = async ({
         reject(new Error("Response object 'res' is required for streaming PDF"));
         return;
       }
+
+      // Pre-process product entries asynchronously in parallel batches
+      const productEntries = await processInBatches(styles, dynamicBatchSize, async (style) => {
+        const detectedKt = extractPurity(style);
+        const validImages = resolveStyleImages(style, detectedKt);
+        const rawImgUrl = validImages.length > 0 ? validImages[0].url : (style.imageUrl || null);
+        
+        // Strip ?v= from URL before processing
+        const cleanUrl = rawImgUrl ? rawImgUrl.split('?')[0] : null;
+        
+        const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
+        let optimizedPath = null;
+        if (resolvedPath) {
+          optimizedPath = await optimizeImageForQuality(resolvedPath, quality);
+        }
+
+        // Determine purity / karat label (e.g. 18KTR, 20KT, 22KT)
+        let ktText = detectedKt;
+        const rawPurity = style.rawData?.Purity || style.rawData?.Item;
+        if (rawPurity && String(rawPurity).trim()) {
+          ktText = String(rawPurity).trim();
+        } else if (style.item && !detectedKt.includes(style.item)) {
+          ktText = `${detectedKt}${style.item}`;
+        }
+
+        return {
+          style,
+          kt: detectedKt,
+          ktText,
+          imgPath: optimizedPath,
+          styleCode: (style.styleCode || '').trim() || getStyleDisplayCode(style),
+          displayCode: getStyleDisplayCode(style),
+          grossWeight: extractGrossWeight(style),
+          netWeight: extractNetWeight(style),
+          categoryName: style.categoryName || 'Fine Jewellery'
+        };
+      });
 
       const pageW = doc.page.width;   // 595.28
       const pageH = doc.page.height;  // 841.89
