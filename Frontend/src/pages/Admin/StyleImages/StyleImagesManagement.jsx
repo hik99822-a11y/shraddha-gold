@@ -340,9 +340,9 @@ const StyleImagesManagement = () => {
       return;
     }
 
-    // Validate size (15MB)
-    if (file.size > 15 * 1024 * 1024) {
-      alert('Image size exceeds maximum limit of 15MB.');
+    // Validate size (100MB)
+    if (file.size > 100 * 1024 * 1024) {
+      alert('Image size exceeds maximum limit of 100MB.');
       return;
     }
 
