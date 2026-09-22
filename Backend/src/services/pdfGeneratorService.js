@@ -119,10 +119,15 @@ const resolveImagePath = async (imgUrl, uploadsRoot) => {
  */
 const optimizeImageForQuality = async (imagePath, quality = 'original') => {
   if (!imagePath) return null;
-  try {
-    await fs.promises.access(imagePath, fs.constants.F_OK);
-  } catch {
-    return null;
+  
+  const isBuffer = Buffer.isBuffer(imagePath);
+  
+  if (!isBuffer) {
+    try {
+      await fs.promises.access(imagePath, fs.constants.F_OK);
+    } catch {
+      return null;
+    }
   }
 
   const q = String(quality || 'original').toLowerCase().trim();
@@ -133,19 +138,7 @@ const optimizeImageForQuality = async (imagePath, quality = 'original') => {
   }
 
   try {
-    const ext = path.extname(imagePath).toLowerCase();
-    const hash = `${path.basename(imagePath, ext)}_${q}.jpg`;
-    const tempOptimizedDir = path.join(uploadsDir, 'cache');
-    if (!fs.existsSync(tempOptimizedDir)) {
-      fs.mkdirSync(tempOptimizedDir, { recursive: true });
-    }
-    const optimizedPath = path.join(tempOptimizedDir, hash);
-
-    if (fs.existsSync(optimizedPath)) {
-      return optimizedPath;
-    }
-
-    let pipeline = sharp(imagePath);
+    let pipeline = isBuffer ? sharp(imagePath) : sharp(imagePath);
 
     if (q === 'print' || q === '600' || q === '600dpi') {
       // 600 DPI: Ultra-high print quality
@@ -172,16 +165,9 @@ const optimizeImageForQuality = async (imagePath, quality = 'original') => {
       return imagePath;
     }
 
-    await pipeline.toFile(optimizedPath);
-    
-    // Auto-delete optimized image cache after 5 minutes
-    setTimeout(() => {
-      if (fs.existsSync(optimizedPath)) {
-        try { fs.unlinkSync(optimizedPath); } catch (e) {}
-      }
-    }, 5 * 60 * 1000);
-
-    return optimizedPath;
+    // We will just return a new buffer instead of saving to cache
+    const optimizedBuffer = await pipeline.toBuffer();
+    return optimizedBuffer;
   } catch (err) {
     console.warn('[optimizeImageForQuality Warning]:', err.message);
     return imagePath;
@@ -245,106 +231,13 @@ export const generateStylesPdf = async ({
   quality = 'original',
   res
 }) => {
-  const fileName = `SG_Catalog_${type}_${Date.now()}.pdf`;
-
-  // Query styles
-  const rawStyles = await Style.find({ ...styleQuery, status: 'Active' })
-    .sort({ categoryName: 1, styleCode: 1 })
-    .limit(1000);
-
-  // Expand items/KT variants into separate product entries for Catalog PDF
-  let styles = expandStylesForCustomer(rawStyles);
-
-  // Filter by category-specific KTs or global allowed KTs
-  const hasCategoryKts = categoryKts && typeof categoryKts === 'object' && Object.keys(categoryKts).length > 0;
-  if (hasCategoryKts) {
-    styles = styles.filter((s) => {
-      const catKey = s.categoryName ? s.categoryName.trim() : '';
-      const catIdKey = s.category ? String(s.category) : '';
-      const allowedForCat = categoryKts[catKey] || categoryKts[catIdKey];
-      if (Array.isArray(allowedForCat) && allowedForCat.length > 0) {
-        const normAllowed = allowedForCat.map((k) => k.replace(/\s*KT/i, '').trim().toUpperCase());
-        const p = (extractPurity(s) || s.purity || '').replace(/\s*KT/i, '').trim().toUpperCase();
-        const cand = `${s.item || ''} ${s.itemCode || ''} ${p}`.toUpperCase();
-        return normAllowed.some((kt) => cand.includes(kt));
-      }
-      // Fallback to global allowedKts if category not found in categoryKts
-      if (Array.isArray(allowedKts) && allowedKts.length > 0 && !allowedKts.includes('All') && !allowedKts.includes('all')) {
-        const normAllowed = allowedKts.map((k) => k.replace(/\s*KT/i, '').trim().toUpperCase());
-        const p = (extractPurity(s) || s.purity || '').replace(/\s*KT/i, '').trim().toUpperCase();
-        const cand = `${s.item || ''} ${s.itemCode || ''} ${p}`.toUpperCase();
-        return normAllowed.some((kt) => cand.includes(kt));
-      }
-      return true;
-    });
-  } else if (Array.isArray(allowedKts) && allowedKts.length > 0 && !allowedKts.includes('All') && !allowedKts.includes('all')) {
-    const normAllowed = allowedKts.map((k) => k.replace(/\s*KT/i, '').trim().toUpperCase());
-    styles = styles.filter((s) => {
-      const p = (extractPurity(s) || s.purity || '').replace(/\s*KT/i, '').trim().toUpperCase();
-      const cand = `${s.item || ''} ${s.itemCode || ''} ${p}`.toUpperCase();
-      return normAllowed.some((kt) => cand.includes(kt));
-    });
-  }
-
-  const uploadsRoot = process.env.DESKTOP_SERVER_DIR || '/Users/hardik/Desktop/server';
-
-  // Helper for batch processing to massively speed up PDF generation
-  const processInBatches = async (itemsArray, batchSize, processFn) => {
-    const results = [];
-    for (let i = 0; i < itemsArray.length; i += batchSize) {
-      const batch = itemsArray.slice(i, i + batchSize);
-      const batchResults = await Promise.all(batch.map(processFn));
-      results.push(...batchResults);
-    }
-    return results;
-  };
-
-  // DYNAMIC BATCH SIZING based on Export Quality Profile
-  // Low/Medium/Original take very little CPU/RAM to process (Original skips Sharp entirely), 
-  // so we process 25 at a time for lightning fast speed.
-  // High/Print take massive CPU/RAM for Sharp resizing, so we throttle to 5 at a time to prevent server crashes.
-  const q = String(quality || 'original').toLowerCase().trim();
-  const dynamicBatchSize = (q === 'low' || q === 'medium' || q === '72dpi' || q === '150dpi' || q === 'original' || q === 'full' || q === 'none') ? 25 : 5;
-
-  // Pre-process product entries asynchronously in parallel batches
-  const productEntries = await processInBatches(styles, dynamicBatchSize, async (style) => {
-    const detectedKt = extractPurity(style);
-    const validImages = resolveStyleImages(style, detectedKt);
-    const rawImgUrl = validImages.length > 0 ? validImages[0].url : (style.imageUrl || null);
-    
-    // Strip ?v= from URL before processing
-    const cleanUrl = rawImgUrl ? rawImgUrl.split('?')[0] : null;
-    
-    const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
-    let optimizedPath = null;
-    if (resolvedPath) {
-      optimizedPath = await optimizeImageForQuality(resolvedPath, quality);
-    }
-
-    // Determine purity / karat label (e.g. 18KTR, 20KT, 22KT)
-    let ktText = detectedKt;
-    const rawPurity = style.rawData?.Purity || style.rawData?.Item;
-    if (rawPurity && String(rawPurity).trim()) {
-      ktText = String(rawPurity).trim();
-    } else if (style.item && !detectedKt.includes(style.item)) {
-      ktText = `${detectedKt}${style.item}`;
-    }
-
-    return {
-      style,
-      kt: detectedKt,
-      ktText,
-      imgPath: optimizedPath,
-      styleCode: (style.styleCode || '').trim() || getStyleDisplayCode(style),
-      displayCode: getStyleDisplayCode(style),
-      grossWeight: extractGrossWeight(style),
-      netWeight: extractNetWeight(style),
-      categoryName: style.categoryName || 'Fine Jewellery'
-    };
-  });
-
   return new Promise(async (resolve, reject) => {
     try {
+      if (!res) {
+        reject(new Error("Response object 'res' is required for streaming PDF"));
+        return;
+      }
+
       const doc = new PDFDocument({
         size: 'A4',
         margin: 0,
@@ -356,12 +249,105 @@ export const generateStylesPdf = async ({
         }
       });
 
-      if (res) {
-        doc.pipe(res);
-      } else {
-        reject(new Error("Response object 'res' is required for streaming PDF"));
-        return;
+      // VERY IMPORTANT: Pipe to response IMMEDIATELY to prevent Nginx 504 Gateway Timeout!
+      // This sends the initial PDF headers to the browser right away, keeping the HTTP connection alive
+      // while we spend time fetching and processing all the heavy images.
+      doc.pipe(res);
+
+      const fileName = `SG_Catalog_${type}_${Date.now()}.pdf`;
+
+      // Query styles
+      const rawStyles = await Style.find({ ...styleQuery, status: 'Active' })
+        .sort({ categoryName: 1, styleCode: 1 })
+        .limit(1000);
+
+      // Expand items/KT variants into separate product entries for Catalog PDF
+      let styles = expandStylesForCustomer(rawStyles);
+
+      // Filter by category-specific KTs or global allowed KTs
+      const hasCategoryKts = categoryKts && typeof categoryKts === 'object' && Object.keys(categoryKts).length > 0;
+      if (hasCategoryKts) {
+        styles = styles.filter((s) => {
+          const catKey = s.categoryName ? s.categoryName.trim() : '';
+          const catIdKey = s.category ? String(s.category) : '';
+          const allowedForCat = categoryKts[catKey] || categoryKts[catIdKey];
+          if (Array.isArray(allowedForCat) && allowedForCat.length > 0) {
+            const normAllowed = allowedForCat.map((k) => k.replace(/\s*KT/i, '').trim().toUpperCase());
+            const p = (extractPurity(s) || s.purity || '').replace(/\s*KT/i, '').trim().toUpperCase();
+            const cand = `${s.item || ''} ${s.itemCode || ''} ${p}`.toUpperCase();
+            return normAllowed.some((kt) => cand.includes(kt));
+          }
+          // Fallback to global allowedKts if category not found in categoryKts
+          if (Array.isArray(allowedKts) && allowedKts.length > 0 && !allowedKts.includes('All') && !allowedKts.includes('all')) {
+            const normAllowed = allowedKts.map((k) => k.replace(/\s*KT/i, '').trim().toUpperCase());
+            const p = (extractPurity(s) || s.purity || '').replace(/\s*KT/i, '').trim().toUpperCase();
+            const cand = `${s.item || ''} ${s.itemCode || ''} ${p}`.toUpperCase();
+            return normAllowed.some((kt) => cand.includes(kt));
+          }
+          return true;
+        });
+      } else if (Array.isArray(allowedKts) && allowedKts.length > 0 && !allowedKts.includes('All') && !allowedKts.includes('all')) {
+        const normAllowed = allowedKts.map((k) => k.replace(/\s*KT/i, '').trim().toUpperCase());
+        styles = styles.filter((s) => {
+          const p = (extractPurity(s) || s.purity || '').replace(/\s*KT/i, '').trim().toUpperCase();
+          const cand = `${s.item || ''} ${s.itemCode || ''} ${p}`.toUpperCase();
+          return normAllowed.some((kt) => cand.includes(kt));
+        });
       }
+
+      const uploadsRoot = process.env.DESKTOP_SERVER_DIR || '/Users/hardik/Desktop/server';
+
+      // Helper for batch processing to massively speed up PDF generation
+      const processInBatches = async (itemsArray, batchSize, processFn) => {
+        const results = [];
+        for (let i = 0; i < itemsArray.length; i += batchSize) {
+          const batch = itemsArray.slice(i, i + batchSize);
+          const batchResults = await Promise.all(batch.map(processFn));
+          results.push(...batchResults);
+        }
+        return results;
+      };
+
+      // DYNAMIC BATCH SIZING based on Export Quality Profile
+      const q = String(quality || 'original').toLowerCase().trim();
+      const dynamicBatchSize = (q === 'low' || q === 'medium' || q === '72dpi' || q === '150dpi' || q === 'original' || q === 'full' || q === 'none') ? 25 : 5;
+
+      // Pre-process product entries asynchronously in parallel batches
+      const productEntries = await processInBatches(styles, dynamicBatchSize, async (style) => {
+        const detectedKt = extractPurity(style);
+        const validImages = resolveStyleImages(style, detectedKt);
+        const rawImgUrl = validImages.length > 0 ? validImages[0].url : (style.imageUrl || null);
+        
+        // Strip ?v= from URL before processing
+        const cleanUrl = rawImgUrl ? rawImgUrl.split('?')[0] : null;
+        
+        const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
+        let optimizedPath = null;
+        if (resolvedPath) {
+          optimizedPath = await optimizeImageForQuality(resolvedPath, quality);
+        }
+
+        // Determine purity / karat label (e.g. 18KTR, 20KT, 22KT)
+        let ktText = detectedKt;
+        const rawPurity = style.rawData?.Purity || style.rawData?.Item;
+        if (rawPurity && String(rawPurity).trim()) {
+          ktText = String(rawPurity).trim();
+        } else if (style.item && !detectedKt.includes(style.item)) {
+          ktText = `${detectedKt}${style.item}`;
+        }
+
+        return {
+          style,
+          kt: detectedKt,
+          ktText,
+          imgPath: optimizedPath,
+          styleCode: (style.styleCode || '').trim() || getStyleDisplayCode(style),
+          displayCode: getStyleDisplayCode(style),
+          grossWeight: extractGrossWeight(style),
+          netWeight: extractNetWeight(style),
+          categoryName: style.categoryName || 'Fine Jewellery'
+        };
+      });
 
       const pageW = doc.page.width;   // 595.28
       const pageH = doc.page.height;  // 841.89
@@ -393,9 +379,13 @@ export const generateStylesPdf = async ({
           // Concurrently fetch buffers for the chunk
           await Promise.all(chunk.map(async (entry) => {
             if (entry.imgPath) {
-              try {
-                entry.imgBuffer = await fs.promises.readFile(entry.imgPath);
-              } catch(e) { entry.imgBuffer = null; }
+              if (Buffer.isBuffer(entry.imgPath)) {
+                entry.imgBuffer = entry.imgPath;
+              } else {
+                try {
+                  entry.imgBuffer = await fs.promises.readFile(entry.imgPath);
+                } catch(e) { entry.imgBuffer = null; }
+              }
             }
           }));
 
