@@ -3,6 +3,7 @@ import fs from 'fs';
 import { exec } from 'child_process';
 import util from 'util';
 import os from 'os';
+import { configService } from '../services/configService.js';
 
 const execPromise = util.promisify(exec);
 
@@ -20,8 +21,9 @@ export const compressPdf = async (req, res) => {
     const outputFilename = `${parsedPath.name}_compressed_${quality}.pdf`;
     const outputPath = path.join(parsedPath.dir, outputFilename);
 
-    // Use a local temporary directory for Ghostscript output to avoid UNC path write errors
-    const tempOutputPath = path.join(os.tmpdir(), outputFilename);
+    // Use a local temporary directory for both input and output to completely avoid Ghostscript UNC/network path issues
+    const tempOutputPath = path.join(os.tmpdir(), `out_${outputFilename}`);
+    const tempInputPath = path.join(os.tmpdir(), `in_${Date.now()}_${parsedPath.base}`);
 
     // Map quality settings to exact Ghostscript downsampling DPI
     let pdfSettings = '/screen';
@@ -47,25 +49,33 @@ export const compressPdf = async (req, res) => {
         break;
     }
 
-    const gsInputPath = inputPath.replace(/\\/g, '/');
+    const gsInputPath = tempInputPath.replace(/\\/g, '/');
     const gsTempOutputPath = tempOutputPath.replace(/\\/g, '/');
 
     // Ghostscript command for PDF compression
-    // Enforcing exact image resolution downsampling to match user selection
     const gsCommand = `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=${pdfSettings} \
       -dDownsampleColorImages=true -dDownsampleGrayImages=true -dDownsampleMonoImages=true \
       -dColorImageResolution=${imageRes} -dGrayImageResolution=${imageRes} -dMonoImageResolution=${imageRes} \
       -dNOPAUSE -dQUIET -dBATCH -sOutputFile="${gsTempOutputPath}" "${gsInputPath}"`;
 
     try {
+      // 1. Copy the input file to the local temp directory
+      await fs.promises.copyFile(inputPath, tempInputPath);
+      
+      // 2. Run Ghostscript strictly on local temp files
       await execPromise(gsCommand);
       
-      // Copy the compressed file from the local temp directory to the final (possibly UNC) destination
+      // 3. Copy the compressed output from the local temp directory to the final network destination
       await fs.promises.copyFile(tempOutputPath, outputPath);
-      // Clean up the temporary file
-      await fs.promises.unlink(tempOutputPath);
+      
+      // 4. Clean up temporary files
+      await fs.promises.unlink(tempOutputPath).catch(() => {});
+      await fs.promises.unlink(tempInputPath).catch(() => {});
     } catch (gsError) {
       console.error('Ghostscript compression failed:', gsError);
+      // Try to clean up temp files on error too
+      await fs.promises.unlink(tempOutputPath).catch(() => {});
+      await fs.promises.unlink(tempInputPath).catch(() => {});
       return res.status(500).json({ success: false, message: 'Failed to compress PDF. Is Ghostscript installed?' });
     }
 
@@ -84,7 +94,7 @@ export const compressPdf = async (req, res) => {
     
     // Construct the URL to return to the frontend
     // The server serves the PDFs from /uploads/pdfs directory
-    const desktopServerUrl = process.env.DESKTOP_SERVER_URL;
+    const desktopServerUrl = configService.get('DESKTOP_SERVER_URL');
     const baseUrl = desktopServerUrl || `${req.protocol}://${req.get('host')}`;
     const fileUrl = `${baseUrl}/uploads/pdfs/${outputFilename}`;
 

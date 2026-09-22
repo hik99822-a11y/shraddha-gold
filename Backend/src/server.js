@@ -4,22 +4,14 @@ dotenv.config();
 import app from './app.js';
 import connectDB from './config/db.js';
 import { startScheduler } from './services/schedulerService.js';
-import SystemConfig from './models/SystemConfig.js';
+import { configService } from './services/configService.js';
 
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB Database
 connectDB().then(async () => {
-  // Load dynamic configs into environment
-  try {
-    const config = await SystemConfig.findOne({ key: 'DESKTOP_SERVER_URL' });
-    if (config && config.value) {
-      process.env.DESKTOP_SERVER_URL = config.value;
-      console.log(`[Config] 🌐 Loaded DESKTOP_SERVER_URL from DB: ${config.value}`);
-    }
-  } catch (err) {
-    console.error('[Config Error]: Failed to load system configs from DB:', err.message);
-  }
+  // Load dynamic configs into cache
+  await configService.loadAll();
 
   // Start server-side scheduled sharing worker
   startScheduler();

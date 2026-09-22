@@ -1,4 +1,5 @@
 import SystemConfig from '../models/SystemConfig.js';
+import { configService } from '../services/configService.js';
 
 /**
  * @desc    Get all system configurations
@@ -43,11 +44,11 @@ export const updateSystemConfig = async (req, res) => {
       { new: true, upsert: true }
     );
 
-    // If updating the desktop server URL, update the running process environment variable
+    // If updating the desktop server URL, update the running process configuration cache
     if (key === 'DESKTOP_SERVER_URL') {
       const cleanUrl = typeof value === 'string' ? value.trim().replace(/\/+$/, '') : value;
-      process.env.DESKTOP_SERVER_URL = cleanUrl;
-      console.log(`[updateSystemConfig] 🌐 Updated live DESKTOP_SERVER_URL to: ${cleanUrl}`);
+      configService.set('DESKTOP_SERVER_URL', cleanUrl);
+      console.log(`[updateSystemConfig] 🌐 Updated live DESKTOP_SERVER_URL in cache to: ${cleanUrl}`);
     }
 
     res.status(200).json({

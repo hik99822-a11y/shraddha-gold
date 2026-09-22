@@ -14,6 +14,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import customerRoutes from './routes/customerRoutes.js';
 import sharedRoutes from './routes/sharedRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import { configService } from './services/configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,7 +59,8 @@ app.use('/uploads', express.static(localUploadsDir));
 
 // Fallback for /uploads if remote server is configured
 app.use('/uploads', async (req, res, next) => {
-  const remoteBase = process.env.DESKTOP_SERVER_URL ? process.env.DESKTOP_SERVER_URL.replace(/\/+$/, '') : null;
+  const desktopUrl = configService.get('DESKTOP_SERVER_URL');
+  const remoteBase = desktopUrl ? desktopUrl.replace(/\/+$/, '') : null;
   if (!remoteBase) return next();
   try {
     const remoteUrl = `${remoteBase}/uploads${req.url}`;
@@ -77,7 +79,8 @@ app.use('/uploads', async (req, res, next) => {
 
 // 2. On-the-fly Streaming Proxy for /server-images (Streams directly from Windows share \\SRV\... via Cloudflare Tunnel)
 app.use('/server-images', async (req, res, next) => {
-  const remoteBase = process.env.DESKTOP_SERVER_URL ? process.env.DESKTOP_SERVER_URL.replace(/\/+$/, '') : null;
+  const desktopUrl = configService.get('DESKTOP_SERVER_URL');
+  const remoteBase = desktopUrl ? desktopUrl.replace(/\/+$/, '') : null;
   
   if (remoteBase) {
     try {

@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import { extractKtFromItem, resolveStyleImages } from '../utils/ktHelper.js';
+import { configService } from './configService.js';
 import { formatDateIST, formatDateTimeIST } from '../utils/dateUtils.js';
 import { fileURLToPath } from 'url';
 import Style from '../models/Style.js';
@@ -67,7 +68,7 @@ const resolveImagePath = async (imgUrl, uploadsRoot) => {
   try {
     let fullImgPath;
     const desktopServerDir = process.env.DESKTOP_SERVER_DIR || '/Users/hardik/Desktop/server';
-    const desktopServerUrl = process.env.DESKTOP_SERVER_URL;
+    const desktopServerUrl = configService.get('DESKTOP_SERVER_URL');
     
     const isUploads = imgUrl.startsWith('/uploads/');
     const isServerImages = imgUrl.startsWith('/server-images/');

@@ -9,6 +9,9 @@ import SystemConfig from '../models/SystemConfig.js';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { promisify } from 'util';
+import { pipeline } from 'stream';
+import { configService } from '../services/configService.js';
 import { getActiveKtList, calculateStylePendingKts } from '../utils/ktHelper.js';
 
 /**
@@ -134,10 +137,10 @@ export const uploadSlotImage = async (req, res) => {
     let source = 'manual_upload';
 
     // Reverse Proxy Upload if DESKTOP_SERVER_URL is set
-    if (process.env.DESKTOP_SERVER_URL) {
+    if (configService.get('DESKTOP_SERVER_URL')) {
       try {
         const fileBuffer = fs.readFileSync(req.file.path);
-        const targetUrl = `${process.env.DESKTOP_SERVER_URL.replace(/\/+$/, '')}/upload`;
+        const targetUrl = `${configService.get('DESKTOP_SERVER_URL').replace(/\/+$/, '')}/upload`;
         
         const response = await fetch(targetUrl, {
           method: 'POST',
@@ -407,7 +410,7 @@ export const deleteSlotImage = async (req, res) => {
               console.warn(`[deleteSlotImage] Failed to delete disk file:`, e.message);
             }
           }
-        } else if (img.url.startsWith('/server-images/') && process.env.DESKTOP_SERVER_URL) {
+        } else if (img.url.startsWith('/server-images/') && configService.get('DESKTOP_SERVER_URL')) {
           // Forward the delete request to the Windows Server to maintain 0% storage
           try {
             // Strip any query parameters (like ?v=timestamp) so Windows can find the actual file
@@ -416,7 +419,7 @@ export const deleteSlotImage = async (req, res) => {
             // SECURITY CHECK: Only delete physical files if they were manually uploaded to the 'style-images' folder.
             // NEVER delete master CAD images from other directories!
             if (relativePath.startsWith('style-images/')) {
-              const targetUrl = `${process.env.DESKTOP_SERVER_URL.replace(/\/+$/, '')}/image`;
+              const targetUrl = `${configService.get('DESKTOP_SERVER_URL').replace(/\/+$/, '')}/image`;
               
               await fetch(targetUrl, {
                 method: 'DELETE',
@@ -490,10 +493,10 @@ export const processBulkImageChunk = async (req, res) => {
       let source = 'manual_upload';
 
       // Reverse Proxy Upload if DESKTOP_SERVER_URL is set
-      if (process.env.DESKTOP_SERVER_URL) {
+      if (configService.get('DESKTOP_SERVER_URL')) {
         try {
           const fileBuffer = fs.readFileSync(file.path);
-          const targetUrl = `${process.env.DESKTOP_SERVER_URL.replace(/\/+$/, '')}/upload`;
+          const targetUrl = `${configService.get('DESKTOP_SERVER_URL').replace(/\/+$/, '')}/upload`;
           
           const response = await fetch(targetUrl, {
             method: 'POST',
@@ -731,7 +734,7 @@ export const syncAgentImages = async (req, res) => {
     const { imageFiles, desktopServerUrl } = req.body;
     if (desktopServerUrl && typeof desktopServerUrl === 'string') {
       const cleanUrl = desktopServerUrl.trim().replace(/\/+$/, '');
-      process.env.DESKTOP_SERVER_URL = cleanUrl;
+      configService.set('DESKTOP_SERVER_URL', cleanUrl);
       console.log(`[syncAgentImages] 🌐 Updated live DESKTOP_SERVER_URL to: ${cleanUrl}`);
       
       // Persist to Database so it survives restarts
