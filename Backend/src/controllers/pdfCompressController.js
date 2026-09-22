@@ -8,11 +8,21 @@ import { configService } from '../services/configService.js';
 const execPromise = util.promisify(exec);
 
 export const compressPdf = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No PDF file uploaded' });
-    }
+  // Start chunking to prevent Nginx 504 Timeout for long compressions
+  res.setHeader('Content-Type', 'application/json');
+  // Express handles chunked encoding automatically if we use res.write()
 
+  if (!req.file) {
+    res.write(JSON.stringify({ success: false, message: 'No PDF file uploaded' }));
+    return res.end();
+  }
+
+  // Send a space character every 15 seconds to keep the Nginx connection alive
+  const keepAliveInterval = setInterval(() => {
+    res.write(' ');
+  }, 15000);
+
+  try {
     const { quality } = req.body;
     const inputPath = req.file.path;
     
@@ -62,8 +72,8 @@ export const compressPdf = async (req, res) => {
       // 1. Copy the input file to the local temp directory
       await fs.promises.copyFile(inputPath, tempInputPath);
       
-      // 2. Run Ghostscript strictly on local temp files
-      await execPromise(gsCommand);
+      // 2. Run Ghostscript strictly on local temp files (Increased buffer for 5GB files)
+      await execPromise(gsCommand, { maxBuffer: 1024 * 1024 * 100 });
       
       // 3. Copy the compressed output from the local temp directory to the final network destination
       await fs.promises.copyFile(tempOutputPath, outputPath);
@@ -76,7 +86,9 @@ export const compressPdf = async (req, res) => {
       // Try to clean up temp files on error too
       await fs.promises.unlink(tempOutputPath).catch(() => {});
       await fs.promises.unlink(tempInputPath).catch(() => {});
-      return res.status(500).json({ success: false, message: 'Failed to compress PDF. Is Ghostscript installed?' });
+      clearInterval(keepAliveInterval);
+      res.write(JSON.stringify({ success: false, message: 'Failed to compress PDF. Is Ghostscript installed?' }));
+      return res.end();
     }
 
     // Calculate file size differences
@@ -88,13 +100,6 @@ export const compressPdf = async (req, res) => {
     const spaceSaved = originalSize - compressedSize;
     const percentageSaved = originalSize > 0 ? ((spaceSaved / originalSize) * 100).toFixed(2) : 0;
 
-    // Optional: We can delete the original uploaded file if we don't need it anymore,
-    // but the requirements say "Keep the original uploaded PDF unchanged".
-    // So we'll keep both, or we can just send the new one back.
-    
-    // The backend serves the PDFs from /uploads directory
-    // which maps to the local uploads directory or DESKTOP_SERVER_DIR
-    // Return relative URL so frontend API wrapper can attach authentication token
     const fileUrl = `/admin/pdf-compress/download?original=${path.basename(inputPath)}&compressed=${outputFilename}`;
     
     // Auto-cleanup after 30 minutes if not downloaded
@@ -103,7 +108,8 @@ export const compressPdf = async (req, res) => {
       fs.unlink(outputPath, () => {});
     }, 30 * 60 * 1000);
 
-    res.status(200).json({
+    clearInterval(keepAliveInterval);
+    res.write(JSON.stringify({
       success: true,
       data: {
         originalSize,
@@ -113,10 +119,13 @@ export const compressPdf = async (req, res) => {
         url: fileUrl,
         filename: outputFilename
       }
-    });
+    }));
+    return res.end();
   } catch (error) {
     console.error('compressPdf error:', error);
-    res.status(500).json({ success: false, message: 'Server error compressing PDF' });
+    clearInterval(keepAliveInterval);
+    res.write(JSON.stringify({ success: false, message: 'Server error compressing PDF' }));
+    return res.end();
   }
 };
 

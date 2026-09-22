@@ -311,7 +311,7 @@ export const generateStylesPdf = async ({
       const doc = new PDFDocument({
         size: 'A4',
         margin: 0,
-        bufferPages: true,
+        bufferPages: false,
         info: {
           Title: `Shraddha Gold - ${targetName || 'Jewellery Catalog'}`,
           Author: "Shraddha Gold's India Pvt. Ltd.",
@@ -539,7 +539,7 @@ export const generateOrderPdf = async (order, res) => {
       const doc = new PDFDocument({
         size: 'A4',
         margin: 40,
-        bufferPages: true,
+        bufferPages: false,
         info: {
           Title: `Shraddha Gold Order - ${order.orderNumber}`,
           Author: 'Shraddha Gold India Pvt. Ltd.',
@@ -823,23 +823,19 @@ export const generateOrderPdf = async (order, res) => {
             doc.fillColor('#6b8c85').fontSize(7).font('Helvetica')
               .text('Shraddha Gold India Pvt. Ltd.  •  Official CAD & B2B Production Specification', 40, afterSumY + 2, { align: 'center', width: doc.page.width - 80 });
           }
+          
+          // --- 5. FOOTER ON CURRENT PAGE ---
+          const oldBottom = doc.page.margins.bottom;
+          doc.page.margins.bottom = 0;
+          doc.fillColor('#6b8c85').fontSize(7.5)
+            .text(
+              `Shraddha Gold  •  Order ${order.orderNumber}  •  Page ${pageIdx + 1} of ${totalPages}`,
+              40,
+              doc.page.height - 22,
+              { align: 'center', width: doc.page.width - 80, lineBreak: false }
+            );
+          doc.page.margins.bottom = oldBottom;
         }
-      }
-
-      // --- 5. FOOTER ON ALL PAGES ---
-      const pages = doc.bufferedPageRange();
-      for (let i = 0; i < pages.count; i++) {
-        doc.switchToPage(i);
-        const oldBottom = doc.page.margins.bottom;
-        doc.page.margins.bottom = 0;
-        doc.fillColor('#6b8c85').fontSize(7.5)
-          .text(
-            `Shraddha Gold  •  Order ${order.orderNumber}  •  Page ${i + 1} of ${pages.count}`,
-            40,
-            doc.page.height - 22,
-            { align: 'center', width: doc.page.width - 80, lineBreak: false }
-          );
-        doc.page.margins.bottom = oldBottom;
       }
 
       doc.end();
