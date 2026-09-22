@@ -446,18 +446,25 @@ export const generateCustomerLink = async (req, res) => {
     const linkCreatedAt = new Date();
     const linkExpiresAt = new Date(linkCreatedAt.getTime());
     if (maxDelay === 0) {
-      // 0 days delay: link is valid for 24 hours
+      // 0 days delay: link is valid for 24 hours from right now
       linkExpiresAt.setTime(linkCreatedAt.getTime() + 24 * 60 * 60 * 1000);
     } else {
-      // N days delay: link is valid for N days at targetShareTime
-      linkExpiresAt.setDate(linkExpiresAt.getDate() + maxDelay);
+      // N days delay: link dispatch is scheduled for N days at targetShareTime
+      // The link should expire 24 hours AFTER it is dispatched!
+      const dispatchTime = new Date(linkCreatedAt.getTime());
+      dispatchTime.setDate(dispatchTime.getDate() + maxDelay);
+      
       if (targetShareTime && typeof targetShareTime === 'string' && targetShareTime.includes(':')) {
         const [h, m] = targetShareTime.split(':').map((v) => parseInt(v, 10));
-        if (!isNaN(h) && !isNaN(m)) linkExpiresAt.setHours(h, m, 0, 0);
+        if (!isNaN(h) && !isNaN(m)) dispatchTime.setHours(h, m, 0, 0);
       }
-      if (linkExpiresAt <= linkCreatedAt) {
-        linkExpiresAt.setTime(linkCreatedAt.getTime() + maxDelay * 24 * 60 * 60 * 1000);
+      
+      if (dispatchTime <= linkCreatedAt) {
+        dispatchTime.setTime(linkCreatedAt.getTime());
       }
+      
+      // Expire 24 hours after the calculated dispatch time
+      linkExpiresAt.setTime(dispatchTime.getTime() + 24 * 60 * 60 * 1000);
     }
 
     // Generate master token and store directly on customer
@@ -479,18 +486,25 @@ export const generateCustomerLink = async (req, res) => {
         const catExpiresAt = new Date(linkCreatedAt.getTime());
 
         if (catDelay === 0) {
-          // 0 days delay: valid for 24 hours
+          // 0 days delay: valid for 24 hours from right now
           catExpiresAt.setTime(linkCreatedAt.getTime() + 24 * 60 * 60 * 1000);
         } else {
-          // N days delay: valid for N days at catShareTime
-          catExpiresAt.setDate(catExpiresAt.getDate() + catDelay);
+          // N days delay: link dispatch is scheduled for N days at catShareTime
+          // The link should expire 24 hours AFTER it is dispatched!
+          const catDispatchTime = new Date(linkCreatedAt.getTime());
+          catDispatchTime.setDate(catDispatchTime.getDate() + catDelay);
+          
           if (catShareTime && typeof catShareTime === 'string' && catShareTime.includes(':')) {
             const [h, m] = catShareTime.split(':').map((v) => parseInt(v, 10));
-            if (!isNaN(h) && !isNaN(m)) catExpiresAt.setHours(h, m, 0, 0);
+            if (!isNaN(h) && !isNaN(m)) catDispatchTime.setHours(h, m, 0, 0);
           }
-          if (catExpiresAt <= linkCreatedAt) {
-            catExpiresAt.setTime(linkCreatedAt.getTime() + catDelay * 24 * 60 * 60 * 1000);
+          
+          if (catDispatchTime <= linkCreatedAt) {
+            catDispatchTime.setTime(linkCreatedAt.getTime());
           }
+          
+          // Expire 24 hours after the scheduled dispatch time
+          catExpiresAt.setTime(catDispatchTime.getTime() + 24 * 60 * 60 * 1000);
         }
 
         const catToken = crypto.randomBytes(16).toString('hex');
