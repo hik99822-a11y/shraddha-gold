@@ -94,7 +94,8 @@ export const compressPdf = async (req, res) => {
     
     // Construct the URL to return to the frontend
     // The backend serves the PDFs from /uploads/pdfs directory
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const baseUrl = `${protocol}://${req.get('host')}`;
     const fileUrl = `${baseUrl}/uploads/pdfs/${outputFilename}`;
 
     res.status(200).json({
