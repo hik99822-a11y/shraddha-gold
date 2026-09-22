@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
 import util from 'util';
+import os from 'os';
 
 const execPromise = util.promisify(exec);
 
@@ -18,6 +19,9 @@ export const compressPdf = async (req, res) => {
     const parsedPath = path.parse(inputPath);
     const outputFilename = `${parsedPath.name}_compressed_${quality}.pdf`;
     const outputPath = path.join(parsedPath.dir, outputFilename);
+
+    // Use a local temporary directory for Ghostscript output to avoid UNC path write errors
+    const tempOutputPath = path.join(os.tmpdir(), outputFilename);
 
     // Map quality settings to exact Ghostscript downsampling DPI
     let pdfSettings = '/screen';
@@ -44,17 +48,22 @@ export const compressPdf = async (req, res) => {
     }
 
     const gsInputPath = inputPath.replace(/\\/g, '/');
-    const gsOutputPath = outputPath.replace(/\\/g, '/');
+    const gsTempOutputPath = tempOutputPath.replace(/\\/g, '/');
 
     // Ghostscript command for PDF compression
     // Enforcing exact image resolution downsampling to match user selection
     const gsCommand = `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=${pdfSettings} \
       -dDownsampleColorImages=true -dDownsampleGrayImages=true -dDownsampleMonoImages=true \
       -dColorImageResolution=${imageRes} -dGrayImageResolution=${imageRes} -dMonoImageResolution=${imageRes} \
-      -dNOPAUSE -dQUIET -dBATCH -sOutputFile="${gsOutputPath}" "${gsInputPath}"`;
+      -dNOPAUSE -dQUIET -dBATCH -sOutputFile="${gsTempOutputPath}" "${gsInputPath}"`;
 
     try {
       await execPromise(gsCommand);
+      
+      // Copy the compressed file from the local temp directory to the final (possibly UNC) destination
+      await fs.promises.copyFile(tempOutputPath, outputPath);
+      // Clean up the temporary file
+      await fs.promises.unlink(tempOutputPath);
     } catch (gsError) {
       console.error('Ghostscript compression failed:', gsError);
       return res.status(500).json({ success: false, message: 'Failed to compress PDF. Is Ghostscript installed?' });
