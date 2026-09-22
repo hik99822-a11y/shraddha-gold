@@ -354,7 +354,7 @@ export const generateStylesPdf = async ({
     };
   });
 
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     try {
       const doc = new PDFDocument({
         size: 'A4',
@@ -503,6 +503,7 @@ export const generateStylesPdf = async ({
             .text(`Page :  ${i + 1} / ${totalPages}`, pageW - frameX - 140, footerY, {
               width: 140,
               align: 'right'
+            });
           }
           
           // PREVENT OUT-OF-MEMORY (OOM) SERVER CRASH
