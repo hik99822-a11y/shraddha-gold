@@ -2,6 +2,8 @@ import cron from 'node-cron';
 import Customer from '../models/Customer.js';
 import User from '../models/User.js';
 import { sendWhatsAppMessage } from './metaApiService.js';
+import fs from 'fs';
+import path from 'path';
 
 let isProcessing = false;
 
@@ -155,6 +157,44 @@ export const executePendingScheduledShares = async () => {
 };
 
 /**
+ * Cleanup orphaned PDF files in uploads directory older than 30 minutes
+ * This handles any leftover files in case the node process restarts and drops its in-memory timeouts
+ */
+export const cleanupOldPdfs = async () => {
+  try {
+    const uploadsDir = process.env.DESKTOP_SERVER_DIR && fs.existsSync(process.env.DESKTOP_SERVER_DIR)
+      ? process.env.DESKTOP_SERVER_DIR
+      : (process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads'));
+
+    if (!fs.existsSync(uploadsDir)) return;
+
+    const files = await fs.promises.readdir(uploadsDir);
+    const now = Date.now();
+    const thirtyMins = 30 * 60 * 1000;
+
+    let deletedCount = 0;
+    for (const file of files) {
+      if (file.toLowerCase().endsWith('.pdf')) {
+        const filePath = path.join(uploadsDir, file);
+        const stats = await fs.promises.stat(filePath);
+        
+        // Delete if older than 30 minutes
+        if (now - stats.mtimeMs > thirtyMins) {
+          await fs.promises.unlink(filePath).catch(() => {});
+          deletedCount++;
+        }
+      }
+    }
+
+    if (deletedCount > 0) {
+      console.log(`🧹 [Scheduler]: Cleaned up ${deletedCount} orphaned PDF files from uploads directory`);
+    }
+  } catch (err) {
+    console.error('[Scheduler PDF Cleanup Error]:', err);
+  }
+};
+
+/**
  * Start cron worker to run every minute
  */
 export const startScheduler = () => {
@@ -162,10 +202,17 @@ export const startScheduler = () => {
   // Run immediate deactivation and share check on startup
   deactivateExpiredCustomers();
   executePendingScheduledShares();
+  cleanupOldPdfs(); // Run immediately on startup
 
+  // Run every minute
   cron.schedule('* * * * *', async () => {
     await deactivateExpiredCustomers();
     await executePendingScheduledShares();
+  });
+
+  // Run every 10 minutes
+  cron.schedule('*/10 * * * *', async () => {
+    await cleanupOldPdfs();
   });
 };
 
