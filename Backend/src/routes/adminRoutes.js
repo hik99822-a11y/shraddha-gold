@@ -121,9 +121,10 @@ router.get('/excel/kts', getDetectedKts);
 
 // 6. PDF Compress
 import { pdfUpload } from '../middleware/uploadMiddleware.js';
-import { compressPdf } from '../controllers/pdfCompressController.js';
+import { compressPdf, downloadAndCleanPdf } from '../controllers/pdfCompressController.js';
 
 router.post('/pdf-compress', pdfUpload.single('file'), compressPdf);
+router.get('/pdf-compress/download', downloadAndCleanPdf);
 
 // 7. System Config
 import { getSystemConfig, updateSystemConfig } from '../controllers/systemConfigController.js';

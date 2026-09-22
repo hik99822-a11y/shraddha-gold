@@ -684,7 +684,10 @@ export const generateCustomerPdf = async (req, res) => {
 
     const { quality = 'original' } = req.body || {};
 
-    const job = await generateStylesPdf({
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="SG_Customer_Catalog_${Date.now()}.pdf"`);
+
+    await generateStylesPdf({
       type: 'Customer',
       targetId: customer._id.toString(),
       targetName: `${customer.businessName || customer.name} Portfolio`,
@@ -692,14 +695,10 @@ export const generateCustomerPdf = async (req, res) => {
         categoryName: { $in: assignedCategoryNames }
       },
       allowedKts: customerKts,
-      quality
+      quality,
+      res
     });
-
-    res.status(200).json({
-      success: true,
-      message: 'Customer catalog PDF generated successfully',
-      job
-    });
+    // Stream completed, do not send JSON
   } catch (error) {
     console.error('[generateCustomerPdf Error]:', error);
     res.status(500).json({ success: false, message: 'Failed to generate PDF', error: error.message });

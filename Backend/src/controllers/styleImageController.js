@@ -672,20 +672,19 @@ export const generateCatalogPdf = async (req, res) => {
       allowedKts.push(kt);
     }
 
-    const job = await generateStylesPdf({
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="SG_Admin_Catalog_${Date.now()}.pdf"`);
+
+    await generateStylesPdf({
       type: query.categoryName || query.$or ? 'Filtered' : 'AllCategories',
       targetName,
       styleQuery: query,
       allowedKts,
       categoryKts,
-      quality
+      quality,
+      res
     });
-
-    res.status(200).json({
-      success: true,
-      message: 'Catalog PDF generated successfully',
-      job
-    });
+    // Stream completed, do not send JSON
   } catch (error) {
     console.error('[generateCatalogPdf Error]:', error);
     res.status(500).json({ success: false, message: 'Failed to generate PDF', error: error.message });

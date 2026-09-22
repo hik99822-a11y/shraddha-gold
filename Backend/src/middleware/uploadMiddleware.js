@@ -15,10 +15,9 @@ const uploadsDir = (process.env.DESKTOP_SERVER_DIR && fs.existsSync(process.env.
   : (process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads'));
 const styleImagesDir = path.join(uploadsDir, 'style-images');
 const excelDir = path.join(uploadsDir, 'excel');
-const pdfsDir = path.join(uploadsDir, 'pdfs');
 
 // Ensure upload directories exist
-[uploadsDir, styleImagesDir, excelDir, pdfsDir].forEach((dir) => {
+[uploadsDir, styleImagesDir, excelDir].forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -73,7 +72,7 @@ export const bulkImageUpload = multer({
 // Disk storage for PDFs
 const pdfStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, pdfsDir);
+    cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();

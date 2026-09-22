@@ -92,11 +92,17 @@ export const compressPdf = async (req, res) => {
     // but the requirements say "Keep the original uploaded PDF unchanged".
     // So we'll keep both, or we can just send the new one back.
     
-    // Construct the URL to return to the frontend
-    // The backend serves the PDFs from /uploads/pdfs directory
+    // The backend serves the PDFs from /uploads directory
+    // which maps to the local uploads directory or DESKTOP_SERVER_DIR
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const baseUrl = `${protocol}://${req.get('host')}`;
-    const fileUrl = `${baseUrl}/uploads/pdfs/${outputFilename}`;
+    const fileUrl = `${baseUrl}/api/admin/pdf-compress/download?original=${path.basename(inputPath)}&compressed=${outputFilename}`;
+    
+    // Auto-cleanup after 30 minutes if not downloaded
+    setTimeout(() => {
+      fs.unlink(inputPath, () => {});
+      fs.unlink(outputPath, () => {});
+    }, 30 * 60 * 1000);
 
     res.status(200).json({
       success: true,
@@ -113,4 +119,20 @@ export const compressPdf = async (req, res) => {
     console.error('compressPdf error:', error);
     res.status(500).json({ success: false, message: 'Server error compressing PDF' });
   }
+};
+
+export const downloadAndCleanPdf = async (req, res) => {
+  const { original, compressed } = req.query;
+  const uploadsDir = process.env.DESKTOP_SERVER_DIR && fs.existsSync(process.env.DESKTOP_SERVER_DIR)
+    ? process.env.DESKTOP_SERVER_DIR
+    : (process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads'));
+
+  const originalPath = path.join(uploadsDir, original);
+  const compressedPath = path.join(uploadsDir, compressed);
+
+  res.download(compressedPath, compressed, (err) => {
+    // Delete files after download completes or fails
+    fs.unlink(originalPath, () => {});
+    fs.unlink(compressedPath, () => {});
+  });
 };

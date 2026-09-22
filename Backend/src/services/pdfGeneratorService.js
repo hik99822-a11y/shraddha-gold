@@ -20,10 +20,9 @@ sharp.concurrency();
 const uploadsDir = (process.env.DESKTOP_SERVER_DIR && fs.existsSync(process.env.DESKTOP_SERVER_DIR))
   ? process.env.DESKTOP_SERVER_DIR
   : (process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads'));
-const pdfsDir = path.join(uploadsDir, 'pdfs');
 
-if (!fs.existsSync(pdfsDir)) {
-  fs.mkdirSync(pdfsDir, { recursive: true });
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 /**
@@ -77,7 +76,7 @@ const resolveImagePath = async (imgUrl, uploadsRoot) => {
       if (desktopServerUrl) {
         const remotePath = isUploads ? imgUrl.replace('/uploads', '') : imgUrl.replace('/server-images', '');
         const remoteUrl = `${desktopServerUrl}${remotePath}`;
-        const tempOptimizedDir = path.join(pdfsDir, 'cache');
+        const tempOptimizedDir = path.join(uploadsDir, 'cache');
         if (!fs.existsSync(tempOptimizedDir)) fs.mkdirSync(tempOptimizedDir, { recursive: true });
         const tempPath = path.join(tempOptimizedDir, 'temp_cat_' + Date.now() + '_' + path.basename(imgUrl));
         try {
@@ -146,7 +145,7 @@ const optimizeImageForQuality = async (imagePath, quality = 'original') => {
   try {
     const ext = path.extname(imagePath).toLowerCase();
     const hash = `${path.basename(imagePath, ext)}_${q}.jpg`;
-    const tempOptimizedDir = path.join(pdfsDir, 'cache');
+    const tempOptimizedDir = path.join(uploadsDir, 'cache');
     if (!fs.existsSync(tempOptimizedDir)) {
       fs.mkdirSync(tempOptimizedDir, { recursive: true });
     }
@@ -253,11 +252,10 @@ export const generateStylesPdf = async ({
   styleQuery = {},
   allowedKts = [],
   categoryKts = {},
-  quality = 'original'
+  quality = 'original',
+  res
 }) => {
   const fileName = `SG_Catalog_${type}_${Date.now()}.pdf`;
-  const filePath = path.join(pdfsDir, fileName);
-  const fileUrl = `/uploads/pdfs/${fileName}`;
 
   // Query styles
   const rawStyles = await Style.find({ ...styleQuery, status: 'Active' })
@@ -368,8 +366,12 @@ export const generateStylesPdf = async ({
         }
       });
 
-      const writeStream = fs.createWriteStream(filePath);
-      doc.pipe(writeStream);
+      if (res) {
+        doc.pipe(res);
+      } else {
+        reject(new Error("Response object 'res' is required for streaming PDF"));
+        return;
+      }
 
       const pageW = doc.page.width;   // 595.28
       const pageH = doc.page.height;  // 841.89
@@ -516,30 +518,17 @@ export const generateStylesPdf = async ({
 
       doc.end();
 
-      writeStream.on('finish', () => {
-        // Auto-delete the generated Catalog PDF after 5 minutes to save disk space
-        setTimeout(() => {
-          if (fs.existsSync(filePath)) {
-            try {
-              fs.unlinkSync(filePath);
-              console.log(`[Auto-Cleanup] Deleted generated Catalog PDF: ${fileName}`);
-            } catch (err) {
-              console.error(`[Auto-Cleanup Error] Could not delete ${fileName}:`, err.message);
-            }
-          }
-        }, 5 * 60 * 1000);
-
+      res.on('finish', () => {
         resolve({
           fileName,
-          fileUrl,
           itemCount: productEntries.length,
           quality,
           status: 'Completed'
         });
       });
 
-      writeStream.on('error', (err) => {
-        console.error('[PDF Generation WriteStream Error]:', err);
+      res.on('error', (err) => {
+        console.error('[PDF Generation Stream Error]:', err);
         reject(err);
       });
     } catch (err) {
@@ -552,10 +541,8 @@ export const generateStylesPdf = async ({
 /**
  * Generates an executive luxury PDF for an Order containing all products
  */
-export const generateOrderPdf = async (order) => {
+export const generateOrderPdf = async (order, res) => {
   const fileName = `SG_Order_${order.orderNumber}_${Date.now()}.pdf`;
-  const filePath = path.join(pdfsDir, fileName);
-  const fileUrl = `/uploads/pdfs/${fileName}`;
 
   return new Promise(async (resolve, reject) => {
     try {
@@ -570,8 +557,12 @@ export const generateOrderPdf = async (order) => {
         }
       });
 
-      const writeStream = fs.createWriteStream(filePath);
-      doc.pipe(writeStream);
+      if (res) {
+        doc.pipe(res);
+      } else {
+        reject(new Error("Response object 'res' is required for streaming PDF"));
+        return;
+      }
 
       const items = order.items || [];
       const uploadsRoot = process.env.DESKTOP_SERVER_DIR || '/Users/hardik/Desktop/server';
@@ -884,29 +875,15 @@ export const generateOrderPdf = async (order) => {
 
       doc.end();
 
-      writeStream.on('finish', () => {
-        // Auto-delete the generated Order PDF after 5 minutes to save disk space
-        setTimeout(() => {
-          if (fs.existsSync(filePath)) {
-            try {
-              fs.unlinkSync(filePath);
-              console.log(`[Auto-Cleanup] Deleted generated Order PDF: ${fileName}`);
-            } catch (err) {
-              console.error(`[Auto-Cleanup Error] Could not delete ${fileName}:`, err.message);
-            }
-          }
-        }, 5 * 60 * 1000);
-
+      res.on('finish', () => {
         resolve({
           fileName,
-          fileUrl,
-          filePath,
           status: 'Completed'
         });
       });
 
-      writeStream.on('error', (err) => {
-        console.error('[generateOrderPdf WriteStream Error]:', err);
+      res.on('error', (err) => {
+        console.error('[generateOrderPdf Stream Error]:', err);
         reject(err);
       });
     } catch (err) {

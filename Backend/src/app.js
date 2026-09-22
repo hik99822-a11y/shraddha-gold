@@ -33,7 +33,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Serve static uploads (style images, generated PDFs, Excel files)
-app.use('/uploads/pdfs', (req, res, next) => {
+app.use('/uploads', (req, res, next) => {
   if (req.query.download === '1' || req.query.download === 'true') {
     const filename = path.basename(req.path);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

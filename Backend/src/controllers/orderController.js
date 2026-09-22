@@ -68,11 +68,10 @@ const createOrderDocumentAndDispatch = async (payload) => {
     status: 'Pending'
   });
 
-  const pdfResult = await generateOrderPdf(order);
-  order.pdfUrl = pdfResult.fileUrl;
+  order.pdfUrl = `/api/orders/${order._id}/pdf`;
 
-  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-  const fullPdfUrl = `${clientUrl}${pdfResult.fileUrl}`;
+  const baseUrl = process.env.API_URL || (process.env.CLIENT_URL ? `${process.env.CLIENT_URL}/api` : 'https://api.shraddhagold.com/api');
+  const fullPdfUrl = `${baseUrl}/orders/${order._id}/pdf`;
   const waResults = await sendOrderWhatsAppNotifications({ order, fullPdfUrl });
 
   if (waResults.customer?.success) {
@@ -1004,14 +1003,13 @@ export const getOrderPdf = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Generate fresh PDF with current logo and clean styling
-    const pdfResult = await generateOrderPdf(order);
-    order.pdfUrl = pdfResult.fileUrl;
-    await order.save();
-
-    // Trigger direct download as an attachment
-    const downloadFileName = `SG_Order_${order.orderNumber}.pdf`;
-    return res.download(pdfResult.filePath, downloadFileName);
+    // Stream fresh PDF directly to the browser
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="SG_Order_${order.orderNumber}.pdf"`);
+    
+    await generateOrderPdf(order, res);
+    
+    // PDF stream finished successfully, do not send JSON response
   } catch (error) {
     console.error('[getOrderPdf Error]:', error);
     res.status(500).json({ success: false, message: 'Failed to generate order PDF', error: error.message });

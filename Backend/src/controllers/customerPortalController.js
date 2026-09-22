@@ -175,21 +175,20 @@ export const downloadCustomerPortalPdf = async (req, res) => {
     const assignedCategoryNames = customer.assignedCategories.map((c) => c.name);
     const { quality = 'high' } = req.body || {};
 
-    const job = await generateStylesPdf({
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="SG_Customer_Catalog_${Date.now()}.pdf"`);
+
+    await generateStylesPdf({
       type: 'Customer',
       targetId: customer._id.toString(),
       targetName: `${customer.name} Curated Portfolio`,
       styleQuery: {
         categoryName: { $in: assignedCategoryNames }
       },
-      quality
+      quality,
+      res
     });
-
-    res.status(200).json({
-      success: true,
-      message: 'Catalog PDF generation started',
-      job
-    });
+    // Stream completed, do not send JSON
   } catch (error) {
     console.error('[downloadCustomerPortalPdf Error]:', error);
     res.status(500).json({ success: false, message: 'PDF request failed', error: error.message });
