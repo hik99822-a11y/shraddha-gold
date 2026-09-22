@@ -326,46 +326,9 @@ export const generateStylesPdf = async ({
         return;
       }
 
-      // Pre-process product entries asynchronously in parallel batches
-      const productEntries = await processInBatches(styles, dynamicBatchSize, async (style) => {
-        const detectedKt = extractPurity(style);
-        const validImages = resolveStyleImages(style, detectedKt);
-        const rawImgUrl = validImages.length > 0 ? validImages[0].url : (style.imageUrl || null);
-        
-        // Strip ?v= from URL before processing
-        const cleanUrl = rawImgUrl ? rawImgUrl.split('?')[0] : null;
-        
-        const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
-        let optimizedPath = null;
-        if (resolvedPath) {
-          optimizedPath = await optimizeImageForQuality(resolvedPath, quality);
-        }
-
-        // Determine purity / karat label (e.g. 18KTR, 20KT, 22KT)
-        let ktText = detectedKt;
-        const rawPurity = style.rawData?.Purity || style.rawData?.Item;
-        if (rawPurity && String(rawPurity).trim()) {
-          ktText = String(rawPurity).trim();
-        } else if (style.item && !detectedKt.includes(style.item)) {
-          ktText = `${detectedKt}${style.item}`;
-        }
-
-        return {
-          style,
-          kt: detectedKt,
-          ktText,
-          imgPath: optimizedPath,
-          styleCode: (style.styleCode || '').trim() || getStyleDisplayCode(style),
-          displayCode: getStyleDisplayCode(style),
-          grossWeight: extractGrossWeight(style),
-          netWeight: extractNetWeight(style),
-          categoryName: style.categoryName || 'Fine Jewellery'
-        };
-      });
-
       const pageW = doc.page.width;   // 595.28
       const pageH = doc.page.height;  // 841.89
-      const totalPages = Math.max(1, productEntries.length);
+      const totalPages = Math.max(1, styles.length);
       const logoCandidates = [
         path.join(__dirname, '../assets/Shraddha Gold India Pvt. Ltd - Black (1).png'),
         path.join(__dirname, '../../../Frontend/public/Shraddha Gold India Pvt. Ltd - Black (1).png'),
@@ -374,7 +337,7 @@ export const generateStylesPdf = async ({
       ];
       const logoPath = logoCandidates.find(p => fs.existsSync(p));
 
-      if (productEntries.length === 0) {
+      if (styles.length === 0) {
         // Render single page when no products match
         if (logoPath) {
           const logoH = 46;
@@ -387,17 +350,54 @@ export const generateStylesPdf = async ({
       } else {
         // CHUNKING LOGIC FOR MASSIVE SPEEDUP: Dynamically read images concurrently from network
         const CHUNK_SIZE = dynamicBatchSize;
-        for (let chunkStart = 0; chunkStart < productEntries.length; chunkStart += CHUNK_SIZE) {
-          const chunk = productEntries.slice(chunkStart, chunkStart + CHUNK_SIZE);
+        for (let chunkStart = 0; chunkStart < styles.length; chunkStart += CHUNK_SIZE) {
+          const chunkStyles = styles.slice(chunkStart, chunkStart + CHUNK_SIZE);
           
-          // Concurrently fetch buffers for the chunk
-          await Promise.all(chunk.map(async (entry) => {
+          // Pre-process this chunk asynchronously in parallel batches
+          const chunk = await Promise.all(chunkStyles.map(async (style) => {
+            const detectedKt = extractPurity(style);
+            const validImages = resolveStyleImages(style, detectedKt);
+            const rawImgUrl = validImages.length > 0 ? validImages[0].url : (style.imageUrl || null);
+            
+            // Strip ?v= from URL before processing
+            const cleanUrl = rawImgUrl ? rawImgUrl.split('?')[0] : null;
+            
+            const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
+            let optimizedPath = null;
+            if (resolvedPath) {
+              optimizedPath = await optimizeImageForQuality(resolvedPath, quality);
+            }
+
+            // Determine purity / karat label (e.g. 18KTR, 20KT, 22KT)
+            let ktText = detectedKt;
+            const rawPurity = style.rawData?.Purity || style.rawData?.Item;
+            if (rawPurity && String(rawPurity).trim()) {
+              ktText = String(rawPurity).trim();
+            } else if (style.item && !detectedKt.includes(style.item)) {
+              ktText = `${detectedKt}${style.item}`;
+            }
+
+            const entry = {
+              style,
+              kt: detectedKt,
+              ktText,
+              imgPath: optimizedPath,
+              styleCode: (style.styleCode || '').trim() || getStyleDisplayCode(style),
+              displayCode: getStyleDisplayCode(style),
+              grossWeight: extractGrossWeight(style),
+              netWeight: extractNetWeight(style),
+              categoryName: style.categoryName || 'Fine Jewellery'
+            };
+
+            // Concurrently fetch buffer for the chunk entry
             if (entry.imgPath) {
               try {
                 entry.imgBuffer = await fs.promises.readFile(entry.imgPath);
               } catch(e) { entry.imgBuffer = null; }
             }
+            return entry;
           }));
+
 
           // Render each product on its own single page (Reference Design)
           for (let j = 0; j < chunk.length; j++) {
@@ -618,29 +618,6 @@ export const generateOrderPdf = async (order, res) => {
           .text(phoneText, rightX, startY + 31);
       };
 
-      // PRE-LOAD ALL IMAGES IN PARALLEL BATCHES
-      const processInBatches = async (itemsArray, batchSize, processFn) => {
-        const results = [];
-        for (let i = 0; i < itemsArray.length; i += batchSize) {
-          const batch = itemsArray.slice(i, i + batchSize);
-          const batchResults = await Promise.all(batch.map(processFn));
-          results.push(...batchResults);
-        }
-        return results;
-      };
-
-      // uploadsRoot is already declared at the top of generateOrderPdf
-
-      // Since Order PDFs always use Original Quality (no heavy Sharp processing),
-      // we can safely use a high batch size (25) for lightning-fast network resolution.
-      const enrichedItems = await processInBatches(items, 25, async (item) => {
-        const cleanUrl = item.imageUrl ? item.imageUrl.split('?')[0] : null;
-        const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
-        return {
-          ...item,
-          preloadedImagePath: resolvedPath
-        };
-      });
 
       // --- 3. PRODUCT ITEM RENDERER ---
       const drawProductItem = async (item, startY, imageSize = 195) => {
@@ -728,7 +705,7 @@ export const generateOrderPdf = async (order, res) => {
         doc.fillColor('#13392e').fontSize(15).font('Helvetica-Bold')
           .text('No Items Registered in Order', { align: 'center' });
       } else {
-        const totalItems = enrichedItems.length;
+        const totalItems = items.length;
         const totalPages = Math.ceil(totalItems / 2);
 
         for (let pageIdx = 0; pageIdx < totalPages; pageIdx++) {
@@ -742,7 +719,7 @@ export const generateOrderPdf = async (order, res) => {
           const isFirstPage = (pageIdx === 0);
           const isLastPage = (pageIdx === totalPages - 1);
           const pageStartIndex = pageIdx * 2;
-          const pageItems = enrichedItems.slice(pageStartIndex, pageStartIndex + 2);
+          const pageItems = items.slice(pageStartIndex, pageStartIndex + 2);
           const numItemsOnPage = pageItems.length;
 
           // Order & Client Dossier strictly on Page 1
@@ -779,9 +756,11 @@ export const generateOrderPdf = async (order, res) => {
           // CONCURRENT CHUNKING: Fetch the 1 or 2 images for this specific page concurrently 
           // before rendering, eliminating sequential network lag just like the Catalog PDFs.
           await Promise.all(pageItems.map(async (item) => {
-            if (item.preloadedImagePath) {
+            const cleanUrl = item.imageUrl ? item.imageUrl.split('?')[0] : null;
+            const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
+            if (resolvedPath) {
               try {
-                item.imgBuffer = await fs.promises.readFile(item.preloadedImagePath);
+                item.imgBuffer = await fs.promises.readFile(resolvedPath);
               } catch (e) {}
             }
           }));
