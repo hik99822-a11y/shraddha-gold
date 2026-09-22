@@ -749,7 +749,7 @@ const StyleImagesManagement = () => {
         return;
       }
 
-      const res = await adminApi.generateCatalogPdf({
+      const blob = await adminApi.generateCatalogPdf({
         type: isAll ? 'AllCategories' : 'Category',
         categoryIds: isAll ? [] : targetCategoryIds,
         categories: isAll ? [] : targetCategoryNames,
@@ -760,10 +760,16 @@ const StyleImagesManagement = () => {
         quality: pdfQuality
       });
 
-      if (res.success && res.job) {
-        setPdfJobResult(res.job);
-        // Automatically trigger browser download of the PDF!
-        await downloadFileFromUrl(`${API_BASE}${res.job.fileUrl}`, res.job.fileName);
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `SG_Admin_Catalog_${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        setPdfJobResult({ status: 'Completed', fileName: `SG_Admin_Catalog_${Date.now()}.pdf` });
       }
     } catch (err) {
       console.error('Failed to generate catalog PDF:', err);
@@ -1194,7 +1200,7 @@ const StyleImagesManagement = () => {
           <Settings size={14} />
           <span>Remote Server Config</span>
         </button>
-        <button
+        {/* <button
           type="button"
           onClick={handleSyncDesktopServer}
           disabled={syncingServer}
@@ -1203,7 +1209,7 @@ const StyleImagesManagement = () => {
         >
           <RefreshCw size={14} className={syncingServer ? 'animate-spin' : ''} />
           <span>{syncingServer ? 'Syncing...' : 'Sync Desktop/Server'}</span>
-        </button>
+        </button> */}
       </div>
 
       {/* Local Server Sync Feedback Toast Banner */}

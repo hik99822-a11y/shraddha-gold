@@ -37,6 +37,50 @@ const request = async (endpoint, options = {}) => {
   }
 };
 
+/**
+ * Fetch wrapper specifically for downloading files (Blobs)
+ */
+export const downloadRequest = async (endpoint, options = {}) => {
+  const token = secureStorage.getItem('shraddha_gold_token');
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options.headers
+  };
+
+  try {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers
+    });
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        window.dispatchEvent(new CustomEvent('auth_unauthorized', { detail: 'Unauthorized access' }));
+      }
+      
+      // Try to parse JSON error message if possible
+      let errorMessage = `Request failed with status ${res.status}`;
+      try {
+        const errorData = await res.json();
+        if (errorData && errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (e) {
+        // Not a JSON error, ignore
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await res.blob();
+  } catch (err) {
+    console.error(`[API Download Error] ${endpoint}:`, err.message);
+    throw err;
+  }
+};
+
+
 export const authApi = {
   login: (credentials) =>
     request('/auth/login', {
@@ -105,10 +149,10 @@ export const adminApi = {
       method: 'POST',
       body: JSON.stringify(data)
     }),
-  generateCustomerPdf: (id, data = {}) =>
-    request(`/admin/customers/${id}/pdf`, {
+  generateCustomerPdf: (id, options) =>
+    downloadRequest(`/admin/customers/${id}/pdf`, {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(options)
     }),
 
   // 3. Categories & Category Groups
@@ -182,7 +226,7 @@ export const adminApi = {
     return request(`/admin/style-images/unmatched?${qs}`, { method: 'GET' });
   },
   generateCatalogPdf: (data) =>
-    request('/admin/style-images/generate-pdf', {
+    downloadRequest('/admin/style-images/generate-pdf', {
       method: 'POST',
       body: JSON.stringify(data)
     }),
@@ -257,7 +301,7 @@ export const adminApi = {
 
 export const customerApi = {
   getPortalContent: () => request('/customer/portal', { method: 'GET' }),
-  downloadPdf: () => request('/customer/portal/pdf', { method: 'POST' })
+  downloadPdf: () => downloadRequest('/customer/portal/pdf', { method: 'POST' })
 };
 
 export const sharedApi = {

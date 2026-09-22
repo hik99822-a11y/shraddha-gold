@@ -1149,11 +1149,18 @@ const CustomersManagement = () => {
     try {
       setCustomerPdfGenerating(true);
       setDownloadingPdfCustomerId(customerPdfTarget._id);
-      const res = await adminApi.generateCustomerPdf(customerPdfTarget._id, {
+      const blob = await adminApi.generateCustomerPdf(customerPdfTarget._id, {
         quality: customerPdfQuality
       });
-      if (res.success && res.job) {
-        await downloadFileFromUrl(`${API_BASE}${res.job.fileUrl}`, res.job.fileName);
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `SG_Customer_Catalog_${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
         setCustomerPdfModalOpen(false);
       }
     } catch (err) {
@@ -1199,11 +1206,17 @@ const CustomersManagement = () => {
   const handleGenerateCustomerPdf = async () => {
     try {
       setPdfLoading(true);
-      const res = await adminApi.generateCustomerPdf(selectedCustomerForShare._id);
-      if (res.success && res.job) {
-        setPdfResult(res.job);
-        // Automatically download PDF to user's computer!
-        await downloadFileFromUrl(`${API_BASE}${res.job.fileUrl}`, res.job.fileName);
+      const blob = await adminApi.generateCustomerPdf(selectedCustomerForShare._id);
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `SG_Customer_Catalog_${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        setPdfResult({ status: 'Completed', fileName: `SG_Customer_Catalog_${Date.now()}.pdf` });
       }
     } catch (err) {
       alert(err.message || 'Failed to generate PDF');
