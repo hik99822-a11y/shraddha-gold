@@ -22,6 +22,9 @@ const server = app.listen(PORT, () => {
   console.log(`🏛️ [Role]: B2B Jewellery Manufacturer REST API`);
 });
 
+// Increase timeout for long-running requests like large PDF generation
+server.setTimeout(30 * 60 * 1000); // 30 minutes
+
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error(`Unhandled Rejection Error: ${err.message}`);
