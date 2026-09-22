@@ -12,6 +12,10 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Allow Sharp to use multiple threads for fast compression when needed.
+// We will rely on dynamic batch sizing below to protect the server CPU instead.
+sharp.concurrency();
 const uploadsDir = (process.env.DESKTOP_SERVER_DIR && fs.existsSync(process.env.DESKTOP_SERVER_DIR))
   ? process.env.DESKTOP_SERVER_DIR
   : (process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads'));
@@ -105,7 +109,12 @@ const resolveImagePath = async (imgUrl, uploadsRoot) => {
       const cleanUrl = imgUrl.startsWith('/') ? imgUrl.slice(1) : imgUrl;
       fullImgPath = path.join(uploadsRoot, cleanUrl);
     }
-    if (fs.existsSync(fullImgPath)) return fullImgPath;
+    try {
+      await fs.promises.access(fullImgPath, fs.constants.F_OK);
+      return fullImgPath;
+    } catch {
+      return null;
+    }
   } catch (e) { /* ignore */ }
   return null;
 };
@@ -119,7 +128,12 @@ const resolveImagePath = async (imgUrl, uploadsRoot) => {
  * - 'low' / '72dpi': 72 DPI (~500px, 65% JPEG quality)
  */
 const optimizeImageForQuality = async (imagePath, quality = 'original') => {
-  if (!imagePath || !fs.existsSync(imagePath)) return null;
+  if (!imagePath) return null;
+  try {
+    await fs.promises.access(imagePath, fs.constants.F_OK);
+  } catch {
+    return null;
+  }
 
   const q = String(quality || 'original').toLowerCase().trim();
 
@@ -296,8 +310,15 @@ export const generateStylesPdf = async ({
     return results;
   };
 
+  // DYNAMIC BATCH SIZING based on Export Quality Profile
+  // Low/Medium/Original take very little CPU/RAM to process (Original skips Sharp entirely), 
+  // so we process 25 at a time for lightning fast speed.
+  // High/Print take massive CPU/RAM for Sharp resizing, so we throttle to 5 at a time to prevent server crashes.
+  const q = String(quality || 'original').toLowerCase().trim();
+  const dynamicBatchSize = (q === 'low' || q === 'medium' || q === '72dpi' || q === '150dpi' || q === 'original' || q === 'full' || q === 'none') ? 25 : 5;
+
   // Pre-process product entries asynchronously in parallel batches
-  const productEntries = await processInBatches(styles, 15, async (style) => {
+  const productEntries = await processInBatches(styles, dynamicBatchSize, async (style) => {
     const detectedKt = extractPurity(style);
     const validImages = resolveStyleImages(style, detectedKt);
     const rawImgUrl = validImages.length > 0 ? validImages[0].url : (style.imageUrl || null);
@@ -371,13 +392,28 @@ export const generateStylesPdf = async ({
         doc.fillColor('#666666').fontSize(14).font('Helvetica')
           .text('No product styles found for selected criteria.', 0, 320, { width: pageW, align: 'center' });
       } else {
-        // Render each product on its own single page (Reference Design)
-        for (let i = 0; i < productEntries.length; i++) {
-          if (i > 0) {
-            doc.addPage();
-          }
+        // CHUNKING LOGIC FOR MASSIVE SPEEDUP: Dynamically read images concurrently from network
+        const CHUNK_SIZE = dynamicBatchSize;
+        for (let chunkStart = 0; chunkStart < productEntries.length; chunkStart += CHUNK_SIZE) {
+          const chunk = productEntries.slice(chunkStart, chunkStart + CHUNK_SIZE);
+          
+          // Concurrently fetch buffers for the chunk
+          await Promise.all(chunk.map(async (entry) => {
+            if (entry.imgPath) {
+              try {
+                entry.imgBuffer = await fs.promises.readFile(entry.imgPath);
+              } catch(e) { entry.imgBuffer = null; }
+            }
+          }));
 
-          const entry = productEntries[i];
+          // Render each product on its own single page (Reference Design)
+          for (let j = 0; j < chunk.length; j++) {
+            const i = chunkStart + j;
+            if (i > 0) {
+              doc.addPage();
+            }
+
+            const entry = chunk[j];
 
           // 1. HEADER: Shraddha Gold Logo (Horizontal)
           if (logoPath) {
@@ -402,16 +438,17 @@ export const generateStylesPdf = async ({
             .stroke();
 
           // Render product image centered inside frame
-          if (entry.imgPath && fs.existsSync(entry.imgPath)) {
+          if (entry.imgBuffer) {
             const imgPad = 12;
             const maxImgW = frameW - (imgPad * 2);
             const maxImgH = frameH - (imgPad * 2);
             try {
-              doc.image(entry.imgPath, frameX + imgPad, frameY + imgPad, {
+              doc.image(entry.imgBuffer, frameX + imgPad, frameY + imgPad, {
                 fit: [maxImgW, maxImgH],
                 align: 'center',
                 valign: 'center'
               });
+              entry.imgBuffer = null; // free memory immediately
             } catch (imgErr) {
               console.warn('[PDF Image Embed Warning]:', imgErr.message);
               doc.fillColor('#888888').fontSize(12).font('Helvetica')
@@ -466,7 +503,12 @@ export const generateStylesPdf = async ({
             .text(`Page :  ${i + 1} / ${totalPages}`, pageW - frameX - 140, footerY, {
               width: 140,
               align: 'right'
-            });
+          }
+          
+          // PREVENT OUT-OF-MEMORY (OOM) SERVER CRASH
+          // Yield the Node.js event loop after every chunk to allow Garbage Collection 
+          // and PDF disk stream flushing to catch up with our fast read speeds.
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
       }
 
@@ -606,7 +648,9 @@ export const generateOrderPdf = async (order) => {
 
       // uploadsRoot is already declared at the top of generateOrderPdf
 
-      const enrichedItems = await processInBatches(items, 15, async (item) => {
+      // Since Order PDFs always use Original Quality (no heavy Sharp processing),
+      // we can safely use a high batch size (25) for lightning-fast network resolution.
+      const enrichedItems = await processInBatches(items, 25, async (item) => {
         const cleanUrl = item.imageUrl ? item.imageUrl.split('?')[0] : null;
         const resolvedPath = await resolveImagePath(cleanUrl, uploadsRoot);
         return {
@@ -624,14 +668,15 @@ export const generateOrderPdf = async (order) => {
         doc.roundedRect(imageX, imageY, imageSize, imageSize, 8).fillAndStroke('#fbfdfc', '#B1D1CB');
 
         let hasImage = false;
-        if (item.preloadedImagePath && fs.existsSync(item.preloadedImagePath)) {
+        if (item.imgBuffer) {
           try {
-            doc.image(item.preloadedImagePath, imageX + 6, imageY + 6, {
+            doc.image(item.imgBuffer, imageX + 6, imageY + 6, {
               fit: [imageSize - 12, imageSize - 12],
               align: 'center',
               valign: 'center'
             });
             hasImage = true;
+            item.imgBuffer = null; // free memory immediately
           } catch (e) {
             // Ignore image load error
           }
@@ -748,9 +793,26 @@ export const generateOrderPdf = async (order) => {
             }
           }
 
+          // CONCURRENT CHUNKING: Fetch the 1 or 2 images for this specific page concurrently 
+          // before rendering, eliminating sequential network lag just like the Catalog PDFs.
+          await Promise.all(pageItems.map(async (item) => {
+            if (item.preloadedImagePath) {
+              try {
+                item.imgBuffer = await fs.promises.readFile(item.preloadedImagePath);
+              } catch (e) {}
+            }
+          }));
+
           let lastEndY = 0;
           for (let j = 0; j < numItemsOnPage; j++) {
             lastEndY = await drawProductItem(pageItems[j], startYList[j], imageSize);
+          }
+
+          // PREVENT OUT-OF-MEMORY (OOM) SERVER CRASH
+          // Yield the Node.js event loop every 10 pages to allow Garbage Collection 
+          // and PDF disk stream flushing to catch up with our fast read speeds.
+          if (pageIdx > 0 && pageIdx % 10 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 100));
           }
 
           // If this is the last page, render the Final Order Summary
