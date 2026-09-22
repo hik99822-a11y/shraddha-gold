@@ -289,6 +289,7 @@ export const adminApi = {
       method: 'POST',
       body: formData
     }),
+  downloadCompressedPdf: (relativeUrl) => downloadRequest(relativeUrl, { method: 'GET' }),
 
   // 7. System Config
   getSystemConfig: () => request('/admin/config', { method: 'GET' }),

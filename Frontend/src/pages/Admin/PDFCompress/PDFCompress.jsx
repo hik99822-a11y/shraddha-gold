@@ -101,6 +101,24 @@ const PDFCompress = () => {
     }
   };
 
+  const handleDownload = async () => {
+    if (!compressionResult || !compressionResult.url) return;
+    try {
+      setError('');
+      const blob = await adminApi.downloadCompressedPdf(compressionResult.url);
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = compressionResult.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      setError(err.message || 'Failed to download compressed PDF');
+    }
+  };
+
   return (
     <div className="admin-page pdf-compress-page">
       <div className="admin-page-header mb-8">
@@ -227,15 +245,15 @@ const PDFCompress = () => {
                 </div>
                 
                 <div className="mt-8 flex gap-4">
-                  <a
-                    href={`${compressionResult.url}?download=1`}
-                    download={compressionResult.filename}
+                  <button
+                    type="button"
+                    onClick={handleDownload}
                     className="btn-brand flex-1 flex justify-center items-center gap-2"
                     style={{ padding: '16px', borderRadius: '12px', fontSize: '1.05rem', fontWeight: '600' }}
                   >
                     <Download size={20} />
                     Download PDF
-                  </a>
+                  </button>
                   <button
                     type="button"
                     onClick={removeFile}
