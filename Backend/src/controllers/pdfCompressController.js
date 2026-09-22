@@ -43,12 +43,15 @@ export const compressPdf = async (req, res) => {
         break;
     }
 
+    const gsInputPath = inputPath.replace(/\\/g, '/');
+    const gsOutputPath = outputPath.replace(/\\/g, '/');
+
     // Ghostscript command for PDF compression
     // Enforcing exact image resolution downsampling to match user selection
     const gsCommand = `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=${pdfSettings} \
       -dDownsampleColorImages=true -dDownsampleGrayImages=true -dDownsampleMonoImages=true \
       -dColorImageResolution=${imageRes} -dGrayImageResolution=${imageRes} -dMonoImageResolution=${imageRes} \
-      -dNOPAUSE -dQUIET -dBATCH -sOutputFile="${outputPath}" "${inputPath}"`;
+      -dNOPAUSE -dQUIET -dBATCH -sOutputFile="${gsOutputPath}" "${gsInputPath}"`;
 
     try {
       await execPromise(gsCommand);
