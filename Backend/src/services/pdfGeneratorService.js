@@ -76,9 +76,6 @@ const resolveImagePath = async (imgUrl, uploadsRoot) => {
       if (desktopServerUrl) {
         const remotePath = isUploads ? imgUrl.replace('/uploads', '') : imgUrl.replace('/server-images', '');
         const remoteUrl = `${desktopServerUrl}${remotePath}`;
-        const tempOptimizedDir = path.join(uploadsDir, 'cache');
-        if (!fs.existsSync(tempOptimizedDir)) fs.mkdirSync(tempOptimizedDir, { recursive: true });
-        const tempPath = path.join(tempOptimizedDir, 'temp_cat_' + Date.now() + '_' + path.basename(imgUrl));
         try {
           const response = await fetch(remoteUrl, {
             headers: {
@@ -87,19 +84,12 @@ const resolveImagePath = async (imgUrl, uploadsRoot) => {
             }
           });
           if (response.ok) {
-            const buffer = await response.arrayBuffer();
-            fs.writeFileSync(tempPath, Buffer.from(buffer));
-            
-            // Auto-delete temporary downloaded image after 5 minutes
-            setTimeout(() => {
-              if (fs.existsSync(tempPath)) {
-                try { fs.unlinkSync(tempPath); } catch (e) {}
-              }
-            }, 5 * 60 * 1000);
-
-            return tempPath;
+            const arrayBuffer = await response.arrayBuffer();
+            return Buffer.from(arrayBuffer);
           }
-        } catch (err) { /* ignore */ }
+        } catch (err) {
+          console.error(`[PDF Image Fetch Error] ${remoteUrl}:`, err.message);
+        }
         return null;
       } else {
         const localPathPart = isUploads ? imgUrl.replace('/uploads/', '') : imgUrl.replace('/server-images/', '');
