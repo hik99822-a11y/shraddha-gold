@@ -1965,6 +1965,26 @@ const CustomersManagement = () => {
                                       }
                                     />
                                   </div>
+
+                                  <div className="admin-timing-field">
+                                    <span className="admin-timing-label">
+                                      <Calendar size={10} /> Validity (Days)
+                                    </span>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      className="admin-timing-input"
+                                      placeholder="1"
+                                      value={groupConfig.validityDays ?? 1}
+                                      onChange={(e) =>
+                                        handleGroupAccessPropChange(
+                                          grp,
+                                          'validityDays',
+                                          e.target.value === '' ? 1 : Math.max(1, parseInt(e.target.value, 10) || 1)
+                                        )
+                                      }
+                                    />
+                                  </div>
                                 </div>
 
                                 {/* Live Schedule Summary Pill */}
@@ -1974,7 +1994,7 @@ const CustomersManagement = () => {
                                   <span className="text-stone-300">•</span>
                                   <span>via <strong>{groupConfig.shareFormat || 'Link'}</strong></span>
                                   <span className="text-stone-300">•</span>
-                                  <span>{(groupConfig.shareAfterDays || 0) === 0 ? 'Day 1 (Valid 24h)' : `Expires in ${groupConfig.shareAfterDays}d`}</span>
+                                  <span>{`Valid for ${groupConfig.validityDays || 1} day(s)`}</span>
                                 </div>
                               </div>
                             )}
@@ -2257,7 +2277,7 @@ const CustomersManagement = () => {
                                       <span className="text-stone-300">•</span>
                                       <span>via <strong>{accessEntry.shareFormat || 'Link'}</strong></span>
                                       <span className="text-stone-300">•</span>
-                                      <span>{(accessEntry.shareAfterDays || 0) === 0 ? 'Day 1 (Valid 24h)' : `Expires in ${accessEntry.shareAfterDays}d`}</span>
+                                      <span>{`Valid for ${accessEntry.validityDays || 1} day(s)`}</span>
                                     </div>
                                   </div>
                                 )}
