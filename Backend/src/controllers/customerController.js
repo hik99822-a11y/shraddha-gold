@@ -684,11 +684,7 @@ export const generateCustomerPdf = async (req, res) => {
 
     const { quality = 'original' } = req.body || {};
 
-    const fileName = `SG_Catalog_Customer_${customer._id}_${Date.now()}.pdf`;
-    const fileUrl = `/uploads/pdfs/${fileName}`;
-
-    // DO NOT await this - run in background to prevent Nginx 504 Gateway Time-out
-    generateStylesPdf({
+    const job = await generateStylesPdf({
       type: 'Customer',
       targetId: customer._id.toString(),
       targetName: `${customer.businessName || customer.name} Portfolio`,
@@ -696,14 +692,13 @@ export const generateCustomerPdf = async (req, res) => {
         categoryName: { $in: assignedCategoryNames }
       },
       allowedKts: customerKts,
-      quality,
-      fileNameOverride: fileName
-    }).catch(err => console.error('[generateStylesPdf Background Error]:', err));
+      quality
+    });
 
-    res.status(202).json({
+    res.status(200).json({
       success: true,
-      message: 'Customer catalog PDF is generating. Please wait.',
-      job: { fileUrl, fileName, status: 'generating' }
+      message: 'Customer catalog PDF generated successfully',
+      job
     });
   } catch (error) {
     console.error('[generateCustomerPdf Error]:', error);

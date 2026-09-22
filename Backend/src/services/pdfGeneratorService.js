@@ -253,12 +253,10 @@ export const generateStylesPdf = async ({
   styleQuery = {},
   allowedKts = [],
   categoryKts = {},
-  quality = 'original',
-  fileNameOverride
+  quality = 'original'
 }) => {
-  const fileName = fileNameOverride || `SG_Catalog_${type}_${Date.now()}.pdf`;
+  const fileName = `SG_Catalog_${type}_${Date.now()}.pdf`;
   const filePath = path.join(pdfsDir, fileName);
-  const tmpFilePath = filePath + '.tmp';
   const fileUrl = `/uploads/pdfs/${fileName}`;
 
   // Query styles
@@ -370,7 +368,7 @@ export const generateStylesPdf = async ({
         }
       });
 
-      const writeStream = fs.createWriteStream(tmpFilePath);
+      const writeStream = fs.createWriteStream(filePath);
       doc.pipe(writeStream);
 
       const pageW = doc.page.width;   // 595.28
@@ -519,15 +517,6 @@ export const generateStylesPdf = async ({
       doc.end();
 
       writeStream.on('finish', () => {
-        // Rename tmp file to final file so clients know it's complete
-        try {
-          if (fs.existsSync(tmpFilePath)) {
-            fs.renameSync(tmpFilePath, filePath);
-          }
-        } catch (e) {
-          console.error('[PDF Rename Error]:', e);
-        }
-
         // Auto-delete the generated Catalog PDF after 5 minutes to save disk space
         setTimeout(() => {
           if (fs.existsSync(filePath)) {
