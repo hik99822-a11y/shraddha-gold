@@ -53,7 +53,7 @@ const imageStorage = multer.diskStorage({
 
 export const imageUpload = multer({
   storage: imageStorage,
-  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB per image
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB per image
   fileFilter: (req, file, cb) => {
     const allowed = /\.(jpg|jpeg|png|webp|avif)$/i;
     if (allowed.test(file.originalname)) {
@@ -67,7 +67,7 @@ export const imageUpload = multer({
 // Multer storage for chunked bulk folder upload
 export const bulkImageUpload = multer({
   storage: imageStorage,
-  limits: { fileSize: 20 * 1024 * 1024, files: 100 }
+  limits: { fileSize: 100 * 1024 * 1024, files: 100 }
 });
 
 // Disk storage for PDFs
