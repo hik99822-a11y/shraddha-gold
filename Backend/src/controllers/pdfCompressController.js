@@ -93,9 +93,8 @@ export const compressPdf = async (req, res) => {
     // So we'll keep both, or we can just send the new one back.
     
     // Construct the URL to return to the frontend
-    // The server serves the PDFs from /uploads/pdfs directory
-    const desktopServerUrl = configService.get('DESKTOP_SERVER_URL');
-    const baseUrl = desktopServerUrl || `${req.protocol}://${req.get('host')}`;
+    // The backend serves the PDFs from /uploads/pdfs directory
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
     const fileUrl = `${baseUrl}/uploads/pdfs/${outputFilename}`;
 
     res.status(200).json({
