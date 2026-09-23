@@ -132,17 +132,22 @@ export const uploadSlotImage = async (req, res) => {
 
     if (!style.images) style.images = {};
 
-    let imageUrl = `/uploads/style-images/${req.file.filename}`;
-    let isRealImage = true;
-    let source = 'manual_upload';
+    // STRICT REQUIREMENT: Only allow uploads if Windows Server is connected
+    const desktopUrl = configService.get('DESKTOP_SERVER_URL');
+    if (!desktopUrl) {
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+      return res.status(400).json({ success: false, message: 'Windows Server is not configured. Cloud uploads are disabled.' });
+    }
 
-    // Reverse Proxy Upload if DESKTOP_SERVER_URL is set
-    if (configService.get('DESKTOP_SERVER_URL')) {
-      try {
-        const fileBuffer = fs.readFileSync(req.file.path);
-        const targetUrl = `${configService.get('DESKTOP_SERVER_URL').replace(/\/+$/, '')}/upload`;
-        
-        const response = await fetch(targetUrl, {
+    let imageUrl = '';
+    let isRealImage = true;
+    let source = 'remote_manual_upload';
+
+    try {
+      const fileBuffer = fs.readFileSync(req.file.path);
+      const targetUrl = `${desktopUrl.replace(/\/+$/, '')}/upload`;
+      
+      const response = await fetch(targetUrl, {
           method: 'POST',
           headers: {
             'File-Name': encodeURIComponent(req.file.originalname),
@@ -160,20 +165,18 @@ export const uploadSlotImage = async (req, res) => {
           throw new Error(`Windows upload failed: ${response.statusText}`);
         }
         
-        const data = await response.json();
-        if (data.success && data.relativePath) {
-          // Point the image URL to the Windows streaming route with a timestamp to break browser cache on replace
-          imageUrl = `/server-images/${data.relativePath}?v=${Date.now()}`;
-          isRealImage = true;
-          source = 'remote_manual_upload';
-        }
-      } catch (proxyErr) {
-        console.error('[Reverse Proxy Upload Error]:', proxyErr.message);
-        // Fallback to local AWS upload if Windows is unreachable
-      } finally {
-        // ALWAYS delete the local temp file from AWS so it consumes 0% cloud storage!
-        try { fs.unlinkSync(req.file.path); } catch (e) {}
+      const data = await response.json();
+      if (data.success && data.relativePath) {
+        imageUrl = `/server-images/${data.relativePath}?v=${Date.now()}`;
+      } else {
+        throw new Error('Windows server rejected the file');
       }
+    } catch (proxyErr) {
+      console.error('[Reverse Proxy Upload Error]:', proxyErr.message);
+      return res.status(502).json({ success: false, message: `Windows PC Unreachable: ${proxyErr.message}` });
+    } finally {
+      // ALWAYS strictly delete the local temp file to keep the uploads folder empty
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
     }
 
     const slotPayload = {
@@ -489,39 +492,52 @@ export const processBulkImageChunk = async (req, res) => {
       const file = files[i];
       const relativePath = relativePaths[i] || '';
       const originalFileName = file.originalname;
-      let imageUrl = `/uploads/style-images/${file.filename}`;
-      let source = 'manual_upload';
+      // STRICT REQUIREMENT: Only allow uploads if Windows Server is connected
+      const desktopUrl = configService.get('DESKTOP_SERVER_URL');
+      if (!desktopUrl) {
+        try { fs.unlinkSync(file.path); } catch (e) {}
+        failedCount++;
+        results.push({ success: false, originalFileName, error: 'Windows Server not configured' });
+        continue;
+      }
 
-      // Reverse Proxy Upload if DESKTOP_SERVER_URL is set
-      if (configService.get('DESKTOP_SERVER_URL')) {
-        try {
-          const fileBuffer = fs.readFileSync(file.path);
-          const targetUrl = `${configService.get('DESKTOP_SERVER_URL').replace(/\/+$/, '')}/upload`;
-          
-          const response = await fetch(targetUrl, {
-            method: 'POST',
-            headers: {
-              'File-Name': encodeURIComponent(originalFileName),
-              'Style-Code': encodeURIComponent('BulkUpload'),
-              'Content-Type': 'application/octet-stream',
-              'bypass-tunnel-reminder': 'true',
-              'User-Agent': 'ShraddhaGold-ReverseProxy/1.0'
-            },
-            body: fileBuffer
-          });
+      let imageUrl = '';
+      let source = 'remote_manual_upload';
 
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.relativePath) {
-              imageUrl = `/server-images/${data.relativePath}?v=${Date.now()}`;
-              source = 'remote_manual_upload';
-            }
-          }
-        } catch (proxyErr) {
-          console.error('[Bulk Reverse Proxy Upload Error]:', proxyErr.message);
-        } finally {
-          try { fs.unlinkSync(file.path); } catch (e) {}
+      try {
+        const fileBuffer = fs.readFileSync(file.path);
+        const targetUrl = `${desktopUrl.replace(/\/+$/, '')}/upload`;
+        
+        const response = await fetch(targetUrl, {
+          method: 'POST',
+          headers: {
+            'File-Name': encodeURIComponent(originalFileName),
+            'Style-Code': encodeURIComponent('BulkUpload'),
+            'Content-Type': 'application/octet-stream',
+            'bypass-tunnel-reminder': 'true',
+            'User-Agent': 'ShraddhaGold-ReverseProxy/1.0'
+          },
+          body: fileBuffer
+        });
+
+        if (!response.ok) {
+          throw new Error('Windows PC rejected the file');
         }
+
+        const data = await response.json();
+        if (data.success && data.relativePath) {
+          imageUrl = `/server-images/${data.relativePath}?v=${Date.now()}`;
+        } else {
+          throw new Error('Failed to retrieve path from Windows');
+        }
+      } catch (proxyErr) {
+        console.error('[Bulk Reverse Proxy Upload Error]:', proxyErr.message);
+        failedCount++;
+        results.push({ success: false, originalFileName, error: `Windows PC Unreachable: ${proxyErr.message}` });
+        continue;
+      } finally {
+        // Strictly delete the temp file
+        try { fs.unlinkSync(file.path); } catch (e) {}
       }
 
       try {
