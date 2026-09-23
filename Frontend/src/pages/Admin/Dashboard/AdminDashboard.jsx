@@ -10,7 +10,7 @@ import {
   AlertCircle,
   FileDown
 } from 'lucide-react';
-import { adminApi } from '../../../services/api';
+import { adminApi, BASE_URL } from '../../../services/api';
 import { formatDateIST, formatTimeIST } from '../../../utils/dateUtils';
 
 const AdminDashboard = () => {
@@ -247,7 +247,7 @@ const AdminDashboard = () => {
                         <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#19241A' }}>{ord.subject}</span>
                         {ord.pdfUrl && (
                           <a
-                            href={ord.pdfUrl.startsWith('http') ? ord.pdfUrl : `http://localhost:5000${ord.pdfUrl}`}
+                            href={ord.pdfUrl.startsWith('http') ? ord.pdfUrl : `${BASE_URL}${ord.pdfUrl}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ color: '#19241A', display: 'inline-flex', alignItems: 'center', padding: '4px 7px', borderRadius: '6px', background: '#EAF2F0', border: '1px solid #9CBDB7', transition: 'all 0.2s' }}
@@ -350,7 +350,7 @@ const AdminDashboard = () => {
                         <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#19241A' }}>{ord.subject}</span>
                         {ord.pdfUrl && (
                           <a
-                            href={ord.pdfUrl.startsWith('http') ? ord.pdfUrl : `http://localhost:5000${ord.pdfUrl}`}
+                            href={ord.pdfUrl.startsWith('http') ? ord.pdfUrl : `${BASE_URL}${ord.pdfUrl}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ color: '#19241A', display: 'inline-flex', alignItems: 'center', padding: '4px 7px', borderRadius: '6px', background: '#EAF2F0', border: '1px solid #9CBDB7', transition: 'all 0.2s' }}
