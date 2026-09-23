@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import { sendWhatsAppMessage } from './metaApiService.js';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
 let isProcessing = false;
 
@@ -85,13 +86,31 @@ export const executePendingScheduledShares = async () => {
 
         try {
           if (ca.shareLinkExpiresAt && new Date(ca.shareLinkExpiresAt) < now) {
-            ca.dispatchStatus = 'Failed';
-            customerChanged = true;
-            continue;
+            const isRecurring = (ca.shareAfterDays || 0) > 0;
+            if (!isRecurring) {
+              ca.dispatchStatus = 'Failed';
+              customerChanged = true;
+              continue;
+            }
+          }
+
+          const isRecurring = (ca.shareAfterDays || 0) > 0;
+          let tokenToSend = ca.shareToken;
+
+          if (isRecurring) {
+            const tokenAge = now.getTime() - new Date(ca.shareLinkCreatedAt || 0).getTime();
+            if (tokenAge > 5 * 60 * 1000) { // Older than 5 minutes
+               ca.shareToken = crypto.randomBytes(16).toString('hex');
+               ca.shareLinkCreatedAt = new Date();
+               
+               const validityDays = !isNaN(parseInt(ca.validityDays, 10)) ? Math.max(1, parseInt(ca.validityDays, 10)) : 1;
+               ca.shareLinkExpiresAt = new Date(now.getTime() + validityDays * 24 * 60 * 60 * 1000);
+               tokenToSend = ca.shareToken;
+            }
           }
 
           const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-          const token = ca.shareToken || customer.shareToken || customer._id.toString();
+          const token = tokenToSend || customer.shareToken || customer._id.toString();
           const shareUrl = `${clientUrl}/shared/${token}`;
           
           let mediaType = 'text';
@@ -135,7 +154,20 @@ export const executePendingScheduledShares = async () => {
             }
           }
 
-          ca.dispatchStatus = 'Sent';
+          ca.lastSharedAt = new Date(now);
+          if (isRecurring) {
+            const nextDispatch = new Date(now);
+            nextDispatch.setDate(nextDispatch.getDate() + ca.shareAfterDays);
+            if (ca.shareTime && typeof ca.shareTime === 'string' && ca.shareTime.includes(':')) {
+              const [h, m] = ca.shareTime.split(':').map((v) => parseInt(v, 10));
+              if (!isNaN(h) && !isNaN(m)) nextDispatch.setHours(h, m, 0, 0);
+            }
+            ca.dispatchScheduledAt = nextDispatch;
+            ca.dispatchStatus = 'Pending';
+          } else {
+            ca.dispatchStatus = 'Sent';
+          }
+          
           customerChanged = true;
           console.log(`[Scheduler]: Successfully sent scheduled share (${ca.categoryName}) to ${customer.name} (Phones: ${phonesToSend.join(', ')})`);
         } catch (jobErr) {

@@ -116,6 +116,11 @@ export const getCustomerPortalContent = async (req, res) => {
       excelColumns = Array.from(keySet);
     }
 
+    const lastSharedAtMap = customer.categoryAccess ? customer.categoryAccess.reduce((acc, ca) => {
+      if (ca.categoryName && ca.lastSharedAt) acc[ca.categoryName] = ca.lastSharedAt;
+      return acc;
+    }, {}) : {};
+
     res.status(200).json({
       success: true,
       customer: {
@@ -135,6 +140,7 @@ export const getCustomerPortalContent = async (req, res) => {
       excelColumns,
       availableItems: await getActiveKtList(),
       availableKts: await getActiveKtList(),
+      lastSharedAtMap,
       latestImport: latestImport ? {
         _id: latestImport._id,
         fileName: latestImport.fileName,

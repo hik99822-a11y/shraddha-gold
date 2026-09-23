@@ -82,12 +82,17 @@ const createOrderDocumentAndDispatch = async (payload) => {
       messageId: waResults.customer.messageId || ''
     };
   }
-  if (waResults.admin?.success) {
+  let adminRes = waResults.admin;
+  if (Array.isArray(adminRes)) {
+    adminRes = adminRes.find(r => r.success) || adminRes[0];
+  }
+  if (adminRes) {
     order.whatsappDispatches.admin = {
-      targetPhone: waResults.admin.targetPhone || '9825012345',
-      status: waResults.admin.mode === 'LIVE_META_API' ? 'Sent' : 'Simulated',
+      targetPhone: adminRes.targetPhone || '',
+      status: adminRes.success ? (adminRes.mode === 'LIVE_META_API' ? 'Sent' : 'Simulated') : 'Failed',
       sentAt: new Date(),
-      messageId: waResults.admin.messageId || ''
+      messageId: adminRes.messageId || '',
+      errorMessage: adminRes.error || ''
     };
   }
 
@@ -932,12 +937,17 @@ export const resendOrderWhatsApp = async (req, res) => {
         messageId: waResults.customer.messageId || ''
       };
     }
-    if (waResults.admin?.success) {
+    let adminRes = waResults.admin;
+    if (Array.isArray(adminRes)) {
+      adminRes = adminRes.find(r => r.success) || adminRes[0];
+    }
+    if (adminRes) {
       order.whatsappDispatches.admin = {
-        targetPhone: process.env.ADMIN_WHATSAPP_PHONE || '9825012345',
-        status: waResults.admin.mode === 'LIVE_META_API' ? 'Sent' : 'Simulated',
+        targetPhone: adminRes.targetPhone || '',
+        status: adminRes.success ? (adminRes.mode === 'LIVE_META_API' ? 'Sent' : 'Simulated') : 'Failed',
         sentAt: new Date(),
-        messageId: waResults.admin.messageId || ''
+        messageId: adminRes.messageId || '',
+        errorMessage: adminRes.error || ''
       };
     }
 

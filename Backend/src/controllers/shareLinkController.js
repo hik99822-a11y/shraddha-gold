@@ -97,6 +97,9 @@ export const getSharedContent = async (req, res) => {
           );
           if (decoded?.id) {
             authenticatedUser = await User.findById(decoded.id).select('-password');
+            if (!authenticatedUser) {
+              authenticatedUser = await Customer.findById(decoded.id).select('-password');
+            }
           }
         } catch (tokenErr) {
           // Token invalid or expired - ignore and treat as unauthenticated
@@ -285,6 +288,9 @@ export const getSharedContent = async (req, res) => {
         );
         if (decoded?.id) {
           authenticatedUser = await User.findById(decoded.id).select('-password');
+          if (!authenticatedUser) {
+            authenticatedUser = await Customer.findById(decoded.id).select('-password');
+          }
         }
       } catch (tokenErr) {
         // Token invalid or expired - ignore and treat as unauthenticated
@@ -297,12 +303,13 @@ export const getSharedContent = async (req, res) => {
         if (authenticatedUser.role === 'admin') {
           isAuthorized = true;
         } else if (
+          (String(customer._id) === String(authenticatedUser._id)) ||
           (customer.user && String(customer.user) === String(authenticatedUser._id)) ||
           (customer.email && customer.email.toLowerCase() === (authenticatedUser.email || '').toLowerCase()) ||
           (customer.phones && (
-            Array.isArray(authenticatedUser.mobile) 
-              ? authenticatedUser.mobile.some(m => customer.phones.includes(m))
-              : customer.phones.includes(authenticatedUser.mobile)
+            Array.isArray(authenticatedUser.mobile || authenticatedUser.phones) 
+              ? (authenticatedUser.mobile || authenticatedUser.phones).some(m => customer.phones.includes(m))
+              : customer.phones.includes(authenticatedUser.mobile || authenticatedUser.phones)
           ))
         ) {
           isAuthorized = true;
@@ -428,6 +435,11 @@ export const getSharedContent = async (req, res) => {
         excelColumns,
         availableItems: await getActiveKtList(),
         availableKts: specificCategoryAccess?.kts?.length > 0 ? specificCategoryAccess.kts : await getActiveKtList(),
+        lastSharedAt: specificCategoryAccess ? specificCategoryAccess.lastSharedAt : null,
+        lastSharedAtMap: customer.categoryAccess ? customer.categoryAccess.reduce((acc, ca) => {
+          if (ca.categoryName && ca.lastSharedAt) acc[ca.categoryName] = ca.lastSharedAt;
+          return acc;
+        }, {}) : {},
         latestImport: latestImport ? {
           _id: latestImport._id,
           fileName: latestImport.fileName,

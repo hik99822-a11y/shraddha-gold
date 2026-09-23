@@ -207,7 +207,11 @@ export const createCustomer = async (req, res) => {
       phones: phoneList,
       city: city?.trim() || '',
       status: finalStatus,
-      categoryAccess: Array.isArray(categoryAccess) ? categoryAccess : [],
+      categoryAccess: Array.isArray(categoryAccess) ? categoryAccess.map(ca => ({
+        ...ca,
+        shareToken: ca.shareToken || crypto.randomBytes(16).toString('hex'),
+        shareLinkCreatedAt: ca.shareLinkCreatedAt || new Date()
+      })) : [],
       assignedCategories: finalAssignedCategories,
       shareFormat: shareFormat === 'PDF' ? 'PDF' : 'Link',
       accessStart: accessStart ? new Date(accessStart) : new Date(),
@@ -283,7 +287,12 @@ export const updateCustomer = async (req, res) => {
       customer.shareFormat = shareFormat === 'PDF' ? 'PDF' : 'Link';
     }
     if (categoryAccess !== undefined && Array.isArray(categoryAccess)) {
-      customer.categoryAccess = categoryAccess;
+      customer.categoryAccess = categoryAccess.map((ca) => ({
+        ...ca,
+        shareToken: ca.shareToken ? ca.shareToken : crypto.randomBytes(16).toString('hex'),
+        shareLinkCreatedAt: ca.shareLinkCreatedAt ? ca.shareLinkCreatedAt : new Date()
+      }));
+      customer.markModified('categoryAccess');
       const catIdsFromAccess = categoryAccess.map((ca) => ca.category).filter(Boolean);
       if (catIdsFromAccess.length > 0) {
         customer.assignedCategories = Array.from(new Set([...(customer.assignedCategories || []), ...catIdsFromAccess]));

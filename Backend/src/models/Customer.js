@@ -119,6 +119,10 @@ const customerSchema = new mongoose.Schema(
           type: Date,
           default: null
         },
+        lastSharedAt: {
+          type: Date,
+          default: null
+        },
         dispatchStatus: {
           type: String,
           enum: ['Pending', 'Sent', 'Failed', 'None'],
@@ -290,7 +294,7 @@ customerSchema.index({ phones: 1 });
 
 // Encrypt password before saving and retain plainPassword
 customerSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
+  if (!this.isModified('password') || !this.password) {
     return next();
   }
   // Store plain text password before hashing

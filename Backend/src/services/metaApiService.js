@@ -132,42 +132,24 @@ export const sendOrderWhatsAppNotifications = async ({ order, fullPdfUrl }) => {
   const results = { customer: null, admin: null };
 
   const itemsText = (order.items || [])
-    .map(
-      (it, idx) =>
-        `${idx + 1}. *${it.styleCode}* (${it.kt || '22KT'}) — ${it.quantity || 1} pc(s) | Gross: ${Number(it.grossWeight || 0).toFixed(2)}g`
-    )
-    .join('\n');
+    .map((it) => `Style Code: ${it.styleCode}\nKT: ${it.kt || '22K'}\nQuantity: ${it.quantity || 1}`)
+    .join('\n\n');
 
-  const notesText = order.notes ? `\n📝 *Notes:* "${order.notes}"\n` : '';
+  const baseMessage = 
+`*New Order Placed*
+
+Business Name: ${order.customerName || 'N/A'}
+Contact Name: ${order.orderedBy || order.customerName || 'N/A'}
+Contact Number: ${order.customerPhone || 'N/A'}
+
+${itemsText}`;
 
   // 1. Dispatch to Customer
   try {
-    const customerMsg = 
-`✨ *Shraddha Gold — Order Details* ✨
-
-📋 *Order Number:* ${order.orderNumber}
-📅 *Date:* ${formatDateTimeIST(order.createdAt || Date.now())}
-👤 *Customer:* ${order.customerName}
-📞 *Mobile:* ${order.customerPhone}
-📌 *Status:* ${order.status || 'Pending'}
-
-📦 *Order Items:*
-${itemsText}
-
-📊 *Summary:*
-• Total Designs: ${order.totalItems || order.items?.length || 0}
-• Total Pieces: ${order.totalQuantity} pcs
-• Gross Weight: ${Number(order.totalGrossWeight || 0).toFixed(2)}g
-${notesText}
-📄 *Order PDF:*
-${fullPdfUrl}`;
-
     results.customer = await dispatchMetaMessage({
       toPhone: order.customerPhone,
-      messageText: customerMsg,
-      mediaType: 'document',
-      mediaUrl: fullPdfUrl,
-      mediaFilename: `Order_${order.orderNumber}.pdf`
+      messageText: baseMessage,
+      mediaType: 'text'
     });
   } catch (err) {
     console.error('[WhatsApp Customer Dispatch Error]:', err.message);
@@ -176,50 +158,35 @@ ${fullPdfUrl}`;
 
   // 2. Dispatch to Admin
   try {
-    let adminPhone = '9825012345'; // Fallback
+    let adminPhones = []; // Only fetch from DB
 
     try {
       const adminUser = await User.findOne({ role: 'admin' }).select('mobile');
-      if (adminUser && adminUser.mobile) {
-        adminPhone = adminUser.mobile;
+      if (adminUser && Array.isArray(adminUser.mobile) && adminUser.mobile.length > 0) {
+        adminPhones = adminUser.mobile;
       }
     } catch (dbErr) {
       console.error('[WhatsApp Admin Phone Fetch Error]:', dbErr.message);
     }
 
-    const adminMsg = 
-`🔔 *Shraddha Gold — New Order Details* 🔔
-
-📋 *Order Number:* ${order.orderNumber}
-📅 *Date:* ${formatDateTimeIST(order.createdAt || Date.now())}
-👤 *Customer:* ${order.customerName}
-📞 *Mobile:* ${order.customerPhone}
-📌 *Status:* ${order.status || 'Pending'}
-
-📦 *Order Items:*
-${itemsText}
-
-📊 *Summary:*
-• Total Designs: ${order.totalItems || order.items?.length || 0}
-• Total Pieces: ${order.totalQuantity} pcs
-• Gross Weight: ${Number(order.totalGrossWeight || 0).toFixed(2)}g
-${notesText}
-📄 *Order PDF:*
-${fullPdfUrl}`;
-
-    results.admin = await dispatchMetaMessage({
-      toPhone: adminPhone,
-      messageText: adminMsg,
-      mediaType: 'document',
-      mediaUrl: fullPdfUrl,
-      mediaFilename: `Order_${order.orderNumber}.pdf`
-    });
-    // Attach the resolved phone to the results so the caller knows who it was sent to
-    if (results.admin) {
-      results.admin.targetPhone = adminPhone;
+    results.admin = [];
+    for (const phone of adminPhones) {
+      if (!phone) continue;
+      try {
+        const res = await dispatchMetaMessage({
+          toPhone: phone,
+          messageText: baseMessage,
+          mediaType: 'text'
+        });
+        res.targetPhone = phone;
+        results.admin.push(res);
+      } catch (dispatchErr) {
+        console.error(`[WhatsApp Admin Dispatch Error to ${phone}]:`, dispatchErr.message);
+        results.admin.push({ success: false, targetPhone: phone, error: dispatchErr.message });
+      }
     }
   } catch (err) {
-    console.error('[WhatsApp Admin Dispatch Error]:', err.message);
+    console.error('[WhatsApp Admin Processing Error]:', err.message);
     results.admin = { success: false, error: err.message };
   }
 
