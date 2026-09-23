@@ -661,12 +661,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
           }
           const p = res.portfolio || res;
 
-          // If the link is "With Login" and the user is authenticated, 
-          // redirect to the actual customer portal to unlock all panel pages.
-          if (p.accessType === 'With Login' && user && user.role !== 'admin') {
-            navigate('/customer/portal', { replace: true });
-            return;
-          }
+          // Removed the forced redirect to /customer/portal so the user stays on the isolated category link.
 
           setData({
             customer: {
@@ -797,8 +792,19 @@ const CustomerPortal = ({ isSharedLink = false }) => {
   // -------------------------------------------------------------
   // Data Extraction & Filter Derivations (Hook Rules: Top Level)
   // -------------------------------------------------------------
-  const { customer, styles = [], categoryGroups = [], excelColumns = [], latestImport } = data || {};
+  const { customer, styles = [], categoryGroups = [], excelColumns = [], latestImport, lastSharedAt, lastSharedAtMap } = data || {};
   const assignedCategories = customer?.assignedCategories || [];
+
+  const isStyleNewForReadyStock = (style) => {
+    if (getRealQty(style) < 1) return false;
+    const categoryDateStr = lastSharedAt || (lastSharedAtMap && lastSharedAtMap[style.categoryName]);
+    if (categoryDateStr) {
+      const sharedDate = new Date(categoryDateStr).getTime();
+      const styleDate = new Date(style.createdAt || 0).getTime();
+      if (styleDate <= sharedDate) return false;
+    }
+    return true;
+  };
 
   const availableKts = useMemo(() => {
     if (Array.isArray(data?.availableItems) && data.availableItems.length > 0) {
@@ -813,7 +819,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
   // 1. Available Category Groups with live style counts for active section
   const availableGroupOptions = useMemo(() => {
     const isReady = stockSection === 'ready';
-    const sectionPool = isReady ? styles.filter((s) => getRealQty(s) >= 1) : styles;
+    const sectionPool = isReady ? styles.filter(isStyleNewForReadyStock) : styles;
     return (categoryGroups || [])
       .map((grp) => {
         const names = Array.isArray(grp.categoryNames) ? grp.categoryNames : [];
@@ -829,7 +835,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
   // 2. Available Categories scoped to selected Category Group and active section
   const availableCategories = useMemo(() => {
     const isReady = stockSection === 'ready';
-    const sectionPool = isReady ? styles.filter((s) => getRealQty(s) >= 1) : styles;
+    const sectionPool = isReady ? styles.filter(isStyleNewForReadyStock) : styles;
     let baseCats = assignedCategories;
     if (selectedCategoryGroup !== 'All') {
       const targetGroup = (categoryGroups || []).find((g) => g.name === selectedCategoryGroup);
@@ -842,7 +848,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
   // Filter helper for any specific section filter state
   const filterStylesForSection = (filters, isReadyOnly = false) => {
     return styles.filter((style) => {
-      if (isReadyOnly && getRealQty(style) < 1) {
+      if (isReadyOnly && !isStyleNewForReadyStock(style)) {
         return false;
       }
       if (filters.categoryGroup !== 'All') {
@@ -901,7 +907,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
   const baseFilteredStyles = useMemo(() => {
     const isReady = stockSection === 'ready';
     return styles.filter((style) => {
-      if (isReady && getRealQty(style) < 1) return false;
+      if (isReady && !isStyleNewForReadyStock(style)) return false;
       if (selectedCategoryGroup !== 'All') {
         const targetGroup = (categoryGroups || []).find((g) => g.name === selectedCategoryGroup);
         const groupCatNames = targetGroup?.categoryNames || [];
@@ -915,7 +921,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
   // 7. Total count of styles in currently active Category Group for active section
   const groupStylesCount = useMemo(() => {
     const isReady = stockSection === 'ready';
-    const pool = isReady ? styles.filter((s) => getRealQty(s) >= 1) : styles;
+    const pool = isReady ? styles.filter(isStyleNewForReadyStock) : styles;
     if (selectedCategoryGroup === 'All') return pool.length;
     const targetGroup = (categoryGroups || []).find((g) => g.name === selectedCategoryGroup);
     const groupCatNames = targetGroup?.categoryNames || [];
@@ -939,8 +945,8 @@ const CustomerPortal = ({ isSharedLink = false }) => {
 
   // 9. Total counts for sidebar badges
   const readyStockCount = useMemo(() => {
-    return styles.filter((s) => getRealQty(s) >= 1).length;
-  }, [styles]);
+    return styles.filter(isStyleNewForReadyStock).length;
+  }, [styles, lastSharedAt, lastSharedAtMap]);
 
   const allStockCount = useMemo(() => {
     return styles.length;

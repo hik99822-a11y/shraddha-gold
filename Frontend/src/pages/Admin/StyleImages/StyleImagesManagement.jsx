@@ -1409,6 +1409,14 @@ const StyleImagesManagement = () => {
                                 )}
                               </div>
                             </div>
+                            {getStylePurity(style) && (
+                              <div 
+                                className="ml-[14px] mt-0.5 text-[11px] font-bold tracking-wide"
+                                style={{ color: 'var(--brand-primary)' }}
+                              >
+                                {getStylePurity(style)}
+                              </div>
+                            )}
                           </div>
                         </td>
 

@@ -1,6 +1,7 @@
 import secureStorage from '../utils/secureStorage';
 
-const API_URL = 'https://api.shraddhagold.com/api';
+// const API_URL = 'https://api.shraddhagold.com/api';
+const API_URL = "http://localhost:5000/api";
 
 /**
  * Universal fetch wrapper with authorization header injection

@@ -35,14 +35,16 @@ const Login = () => {
   // If already logged in, route to appropriate dashboard
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === 'admin') {
+      if (redirectUrl) {
+        navigate(redirectUrl, { replace: true });
+      } else if (user.role === 'admin') {
         navigate('/admin/dashboard', { replace: true });
       } else {
         // If they are a customer, always take them to their full portal
         navigate('/customer/portal', { replace: true });
       }
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, redirectUrl]);
 
   const validateForm = () => {
     const errors = {};
@@ -78,7 +80,9 @@ const Login = () => {
           type: 'success'
         });
         setTimeout(() => {
-          if (isAdmin) {
+          if (redirectUrl) {
+            navigate(redirectUrl);
+          } else if (isAdmin) {
             navigate('/admin/dashboard');
           } else {
             navigate('/customer/portal');

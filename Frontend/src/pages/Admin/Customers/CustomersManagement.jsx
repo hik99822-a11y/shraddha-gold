@@ -517,7 +517,8 @@ const CustomersManagement = () => {
           kts: Array.isArray(ca.kts) && ca.kts.length > 0 ? ca.kts : (availableKts.length > 0 ? availableKts : []),
           shareFormat: ca.shareFormat || customer.shareFormat || 'Link',
           shareTime: ca.shareTime || customer.linkShareTime || '10:00',
-          shareAfterDays: ca.shareAfterDays !== undefined ? ca.shareAfterDays : (customer.linkShareAfterDays || 0)
+          shareAfterDays: ca.shareAfterDays !== undefined ? ca.shareAfterDays : (customer.linkShareAfterDays || 0),
+          shareToken: ca.shareToken || null
         }));
     } else if (Array.isArray(customer.assignedCategories) && customer.assignedCategories.length > 0) {
       loadedAccess = customer.assignedCategories
@@ -533,7 +534,8 @@ const CustomersManagement = () => {
             kts: (availableKts.length > 0 ? availableKts : []),
             shareFormat: customer.shareFormat || 'Link',
             shareTime: customer.linkShareTime || '10:00',
-            shareAfterDays: customer.linkShareAfterDays || 0
+            shareAfterDays: customer.linkShareAfterDays || 0,
+            shareToken: null
           };
         });
     }
@@ -1966,41 +1968,13 @@ const CustomersManagement = () => {
                                     />
                                   </div>
 
-                                  <div className="admin-timing-field">
-                                    <span className="admin-timing-label">
-                                      <Calendar size={10} /> Validity (Days)
-                                    </span>
-                                    <input
-                                      type="number"
-                                      min="1"
-                                      className="admin-timing-input"
-                                      placeholder="1"
-                                      value={groupConfig.validityDays ?? 1}
-                                      onChange={(e) =>
-                                        handleGroupAccessPropChange(
-                                          grp,
-                                          'validityDays',
-                                          e.target.value === '' ? 1 : Math.max(1, parseInt(e.target.value, 10) || 1)
-                                        )
-                                      }
-                                    />
-                                  </div>
-                                </div>
 
-                                {/* Live Schedule Summary Pill */}
-                                <div className="flex items-center gap-2 text-[11px] font-semibold text-[#13392e] bg-[#f7fcfb] px-3 py-2 rounded-lg border border-[#c2ded8] mt-3 shadow-sm w-full">
-                                  <Clock size={12} className="text-[#4a756b] shrink-0" />
-                                  <span>Scheduled: <strong>{formatTimeDisplay(groupConfig.shareTime || '10:00')}</strong></span>
-                                  <span className="text-stone-300">•</span>
-                                  <span>via <strong>{groupConfig.shareFormat || 'Link'}</strong></span>
-                                  <span className="text-stone-300">•</span>
-                                  <span>{`Valid for ${groupConfig.validityDays || 1} day(s)`}</span>
                                 </div>
                               </div>
                             )}
 
                             {/* Group Card Bottom Row */}
-                            <div className="admin-group-bottom-row">
+                            {/* <div className="admin-group-bottom-row">
                               {selectedCount > 0 ? (
                                 <span className="text-[10px] text-stone-500 font-medium italic">
                                   Applies to all {grp.name} categories ({selectedCount}/{total})
@@ -2039,7 +2013,7 @@ const CustomersManagement = () => {
                               >
                                 <span>Filter below ↓</span>
                               </button>
-                            </div>
+                            </div> */}
                           </div>
                         );
                       })}
@@ -2174,11 +2148,26 @@ const CustomersManagement = () => {
                                       {cat.name}
                                     </span>
                                   </div>
-                                  {grp && (
-                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200/60">
-                                      {grp.name}
-                                    </span>
-                                  )}
+                                  <div className="ml-auto flex items-center gap-2">
+                                    {grp && (
+                                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200/60">
+                                        {grp.name}
+                                      </span>
+                                    )}
+                                    {isAssigned && accessEntry.shareToken && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          copyToClipboard(`${window.location.origin}/shared/${accessEntry.shareToken}`);
+                                        }}
+                                        className="text-[#4a756b] hover:bg-[#eaf4f2] border border-[#c2ded8] transition-colors flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold"
+                                        title="Copy link for this category"
+                                      >
+                                        <Copy size={10} strokeWidth={2.5} /> Copy
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
 
                                 {/* Granular KT & Category Share Config Panel */}
@@ -2270,15 +2259,7 @@ const CustomersManagement = () => {
                                       </div>
                                     </div>
 
-                                    {/* Live Schedule Summary Pill */}
-                                    <div className="flex items-center gap-2 text-[11px] font-semibold text-[#13392e] bg-[#f7fcfb] px-3 py-2 rounded-lg border border-[#c2ded8] mt-3 shadow-sm w-full">
-                                      <Clock size={12} className="text-[#4a756b] shrink-0" />
-                                      <span>Scheduled: <strong>{formatTimeDisplay(accessEntry.shareTime || '10:00')}</strong></span>
-                                      <span className="text-stone-300">•</span>
-                                      <span>via <strong>{accessEntry.shareFormat || 'Link'}</strong></span>
-                                      <span className="text-stone-300">•</span>
-                                      <span>{`Valid for ${accessEntry.validityDays || 1} day(s)`}</span>
-                                    </div>
+
                                   </div>
                                 )}
                               </div>
@@ -3144,20 +3125,7 @@ const CustomersManagement = () => {
                   </div>
                 </div>
 
-                <div className="customer-modal-kpi-card">
-                  <div className="customer-modal-kpi-top">
-                    <span className="customer-modal-kpi-label">SHARING SCHEDULE</span>
-                    <div className="customer-modal-kpi-icon-wrap">
-                      <Clock size={13} />
-                    </div>
-                  </div>
-                  <div className="customer-modal-kpi-val">
-                    {formatTimeDisplay(viewingCustomer.linkShareTime || '10:00')}
-                  </div>
-                  <div className="customer-modal-kpi-sub">
-                    <span>{viewingCustomer.linkShareAfterDays ? `+${viewingCustomer.linkShareAfterDays} days offset` : 'Day 1 immediate'}</span>
-                  </div>
-                </div>
+
               </div>
 
               {/* Row 2: Contacts & Account Credentials Grid */}
@@ -3277,54 +3245,7 @@ const CustomersManagement = () => {
 
                   <div className="customer-modal-section-body">
                     <div className="customer-link-container">
-                      {/* Share Link Box */}
-                      <div>
-                        <div className="mb-1.5">
-                          <span className="customer-link-label">
-                            PORTFOLIO ACCESS LINK
-                          </span>
-                        </div>
-                        <div className="customer-token-bar">
-                          <div className="customer-token-icon-badge">
-                            <Link2 size={13} />
-                          </div>
-                          <input
-                            type="text"
-                            readOnly
-                            value={
-                              viewingCustomer.shareToken
-                                ? `${window.location.origin}/shared/${viewingCustomer.shareToken}`
-                                : 'No link token generated yet'
-                            }
-                            className="customer-token-input"
-                          />
-                          {viewingCustomer.shareToken && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                copyViewField(
-                                  `${window.location.origin}/shared/${viewingCustomer.shareToken}`,
-                                  'tokenUrl'
-                                )
-                              }
-                              className="customer-token-copy-btn"
-                              title="Copy link"
-                            >
-                              {viewCopiedField === 'tokenUrl' ? (
-                                <>
-                                  <Check size={12} className="text-emerald-300" />
-                                  <span>Copied!</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy size={12} />
-                                  <span>Copy Link</span>
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      </div>
+
 
                       {/* Direct Mode Banner vs Credentials */}
                       {viewingCustomer.linkShareType === 'Without Login' && !showCredsInDirectMode ? (
@@ -3370,12 +3291,12 @@ const CustomersManagement = () => {
                               </div>
                               <div className="customer-cred-val-row">
                                 <span className="customer-cred-code">
-                                  {viewingCustomer.user?.username || '—'}
+                                  {viewingCustomer.username || viewingCustomer.user?.username || '—'}
                                 </span>
-                                {viewingCustomer.user?.username && (
+                                {(viewingCustomer.username || viewingCustomer.user?.username) && (
                                   <button
                                     type="button"
-                                    onClick={() => copyViewField(viewingCustomer.user.username, 'uname')}
+                                    onClick={() => copyViewField(viewingCustomer.username || viewingCustomer.user?.username, 'uname')}
                                     className="customer-contact-copy-btn"
                                     title="Copy username"
                                   >
@@ -3482,7 +3403,8 @@ const CustomersManagement = () => {
                           <th>Purity (KT)</th>
                           <th>Schedule Time</th>
                           <th>Release Delay</th>
-                          <th style={{ textAlign: 'right' }}>Format</th>
+                          <th style={{ textAlign: 'center' }}>Format</th>
+                          <th style={{ textAlign: 'right' }}>Link</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -3558,11 +3480,29 @@ const CustomersManagement = () => {
                                     </div>
                                   )}
                                 </td>
-                                <td style={{ textAlign: 'right' }}>
+                                <td style={{ textAlign: 'center' }}>
                                   <span className={`customer-format-pill ${formatType === 'PDF' ? 'pdf' : 'link'}`}>
                                     {formatType === 'PDF' ? <FileDown size={11} /> : <Share2 size={11} />}
                                     <span>{formatType}</span>
                                   </span>
+                                </td>
+                                <td style={{ textAlign: 'right' }}>
+                                  {ca.shareToken ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyViewField(`${window.location.origin}/shared/${ca.shareToken}`, `cat_link_${idx}`);
+                                      }}
+                                      className="text-[#4a756b] hover:bg-[#eaf4f2] transition-colors inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[#c2ded8] text-[9px] font-bold bg-white"
+                                      title="Copy link for this category"
+                                    >
+                                      {viewCopiedField === `cat_link_${idx}` ? <Check size={9} strokeWidth={2.5} className="text-emerald-600" /> : <Copy size={9} strokeWidth={2.5} />}
+                                      <span>Copy</span>
+                                    </button>
+                                  ) : (
+                                    <span className="text-[9px] italic text-stone-400">No Link</span>
+                                  )}
                                 </td>
                               </tr>
                             );
@@ -3909,30 +3849,7 @@ const CustomersManagement = () => {
             <span>Share Portfolio</span>
           </button>  */}
 
-          {/* 3. 1-Click Copy or Generate Link */}
-          <button
-            type="button"
-            onClick={() => {
-              handleDirectCopyCustomerLink(menuTargetCustomer);
-            }}
-            disabled={generatingLinkCustomerId === menuTargetCustomer._id}
-            className="customer-action-menu-item"
-          >
-            {copiedCustomerId === menuTargetCustomer._id ? (
-              <Check size={15} className="text-emerald-600 stroke-[2.5] shrink-0" />
-            ) : generatingLinkCustomerId === menuTargetCustomer._id ? (
-              <RefreshCw size={15} className="animate-spin text-brand-primary shrink-0" />
-            ) : (
-              <Copy size={15} className="text-stone-600 shrink-0" />
-            )}
-            <span>
-              {copiedCustomerId === menuTargetCustomer._id
-                ? 'Link Copied!'
-                : generatingLinkCustomerId === menuTargetCustomer._id
-                ? 'Generating Link...'
-                : 'Copy Link'}
-            </span>
-          </button>
+
 
           {/* 4. Customer Catalog PDF Download with Quality Options */}
           <button
