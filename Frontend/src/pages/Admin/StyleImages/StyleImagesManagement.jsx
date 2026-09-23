@@ -113,9 +113,6 @@ const StyleImagesManagement = () => {
     showBanner: false
   });
 
-  // Local Desktop/server Sync State
-  const [syncingServer, setSyncingServer] = useState(false);
-  const [syncToast, setSyncToast] = useState(null);
 
   // Unmatched Images Report Modal
   const [unmatchedModalOpen, setUnmatchedModalOpen] = useState(false);
@@ -492,34 +489,6 @@ const StyleImagesManagement = () => {
     fetchStyles();
   };
 
-  // Direct 1-Click Sync from Local Desktop/server Folder (Auto-scans all subfolders and sets Slot 1 stylecode-wise)
-  const handleSyncDesktopServer = async () => {
-    try {
-      setSyncingServer(true);
-      const res = await adminApi.syncDesktopServerFolder();
-      if (res.success) {
-        setSyncToast({
-          type: 'success',
-          message: `✨ Desktop/server Synced! ${res.totalScanned} files scanned across all subfolders ➔ ${res.matchedCount} styles matched and updated!`
-        });
-        fetchStyles();
-      } else {
-        setSyncToast({
-          type: 'error',
-          message: res.message || 'Sync failed'
-        });
-      }
-    } catch (err) {
-      console.error('Desktop server sync failed:', err);
-      setSyncToast({
-        type: 'error',
-        message: err.message || 'Failed to sync Desktop/server folder'
-      });
-    } finally {
-      setSyncingServer(false);
-      setTimeout(() => setSyncToast(null), 6000);
-    }
-  };
 
   // Unmatched Images Viewer
   const openUnmatchedModal = async () => {
@@ -1200,45 +1169,7 @@ const StyleImagesManagement = () => {
           <Settings size={14} />
           <span>Remote Server Config</span>
         </button>
-        {/* <button
-          type="button"
-          onClick={handleSyncDesktopServer}
-          disabled={syncingServer}
-          className="btn-brand"
-          title="Automatically scan all files & subfolders in Desktop/server and link style images directly without manual uploading"
-        >
-          <RefreshCw size={14} className={syncingServer ? 'animate-spin' : ''} />
-          <span>{syncingServer ? 'Syncing...' : 'Sync Desktop/Server'}</span>
-        </button> */}
       </div>
-
-      {/* Local Server Sync Feedback Toast Banner */}
-      {syncToast && (
-        <div
-          className={`p-3 rounded-lg mb-6 text-xs flex items-center justify-between border shadow-sm transition-all ${
-            syncToast.type === 'success'
-              ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
-              : 'bg-red-50 text-red-900 border-red-300'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {syncToast.type === 'success' ? (
-              <CheckCircle2 size={16} className="text-emerald-700 flex-shrink-0" />
-            ) : (
-              <AlertTriangle size={16} className="text-red-700 flex-shrink-0" />
-            )}
-            <span className="font-semibold">{syncToast.message}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSyncToast(null)}
-            className="p-1 hover:opacity-75 text-text-muted hover:text-text-primary ml-2"
-            title="Dismiss"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      )}
 
       {/* Real-Time Bulk Folder Import Progress Banner (Inline, No Modal) */}
       {bulkStats.showBanner && (
