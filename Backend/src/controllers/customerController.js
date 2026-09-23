@@ -302,6 +302,7 @@ export const updateCustomer = async (req, res) => {
       // Automatically deactivate if access end date & time is in the past
       if (customer.accessEnd <= new Date()) {
         customer.status = 'Inactive';
+        customer.isActive = false;
       }
     }
 
@@ -309,8 +310,10 @@ export const updateCustomer = async (req, res) => {
       // Prevent setting to 'Active' if accessEnd is in the past
       if (status === 'Active' && customer.accessEnd && customer.accessEnd <= new Date()) {
         customer.status = 'Inactive';
+        customer.isActive = false;
       } else {
         customer.status = status;
+        customer.isActive = (status === 'Active');
       }
     }
 
