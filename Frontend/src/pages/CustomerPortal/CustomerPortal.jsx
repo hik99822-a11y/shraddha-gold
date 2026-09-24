@@ -796,24 +796,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
   const assignedCategories = customer?.assignedCategories || [];
 
   const isStyleNewForReadyStock = (style) => {
-    if (getRealQty(style) < 1) return false;
-    
-    // Check if it's from the latest Excel import
-    if (latestImport && latestImport._id) {
-      if (String(style.lastExcelImportId) !== String(latestImport._id)) {
-        return false;
-      }
-    }
-    
-    // Existing category link functionality
-    const categoryDateStr = lastSharedAt || (lastSharedAtMap && lastSharedAtMap[style.categoryName]);
-    if (categoryDateStr) {
-      const sharedDate = new Date(categoryDateStr).getTime();
-      const styleDate = new Date(style.createdAt || 0).getTime();
-      if (styleDate <= sharedDate) return false;
-    }
-    
-    return true;
+    return getRealQty(style) >= 1;
   };
 
   const availableKts = useMemo(() => {

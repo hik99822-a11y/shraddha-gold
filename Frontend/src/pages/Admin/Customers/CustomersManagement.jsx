@@ -3834,21 +3834,34 @@ const CustomersManagement = () => {
             <span>View Details</span>
           </button>
 
-          {/* 2. Share Portfolio & WhatsApp Schedule */}
-          {/* <button
+          {/* 2. Copy Master Portal Link */}
+          <button
             type="button"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               const c = menuTargetCustomer;
               setActiveActionMenuId(null);
               setMenuTargetCustomer(null);
-              openShareModal(c);
+              handleDirectCopyCustomerLink(c);
             }}
             className="customer-action-menu-item"
+            disabled={generatingLinkCustomerId === menuTargetCustomer?._id}
           >
-            <Share2 size={15} className="text-brand-dark shrink-0" />
-            <span>Share Portfolio</span>
-          </button>  */}
-
+            {copiedCustomerId === menuTargetCustomer?._id ? (
+              <Check size={15} className="text-green-600 shrink-0" />
+            ) : generatingLinkCustomerId === menuTargetCustomer?._id ? (
+              <RefreshCw size={15} className="text-brand-dark shrink-0 animate-spin" />
+            ) : (
+              <Link2 size={15} className="text-brand-dark shrink-0" />
+            )}
+            <span>
+              {copiedCustomerId === menuTargetCustomer?._id 
+                ? 'Copied!' 
+                : generatingLinkCustomerId === menuTargetCustomer?._id 
+                  ? 'Generating...' 
+                  : 'Copy Link'}
+            </span>
+          </button>
 
 
           {/* 4. Customer Catalog PDF Download with Quality Options */}
