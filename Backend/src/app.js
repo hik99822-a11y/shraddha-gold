@@ -14,6 +14,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import customerRoutes from './routes/customerRoutes.js';
 import sharedRoutes from './routes/sharedRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import webhookRoutes from './routes/webhookRoutes.js';
 import { configService } from './services/configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -151,6 +152,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/customer', customerRoutes);
 app.use('/api/shared', sharedRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/webhook', webhookRoutes);
 
 // Error Handling Middlewares
 app.use(notFound);

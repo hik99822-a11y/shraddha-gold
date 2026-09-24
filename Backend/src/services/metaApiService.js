@@ -7,7 +7,7 @@ import { formatDateIST, formatDateTimeIST } from '../utils/dateUtils.js';
 /**
  * Generic WhatsApp message dispatcher (handles Live Meta API or graceful development simulation)
  */
-export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, mediaUrl, mediaFilename }) => {
+export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, mediaUrl, mediaFilename, templateName, templateData }) => {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   let cleanPhone = (toPhone || '').replace(/[^0-9]/g, '');
@@ -25,10 +25,21 @@ export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, med
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
         to: cleanPhone,
-        type: mediaType === 'document' ? 'document' : 'text'
+        type: templateName ? 'template' : (mediaType === 'document' ? 'document' : 'text')
       };
 
-      if (mediaType === 'document') {
+      if (templateName) {
+        payload.template = {
+          name: templateName,
+          language: { code: 'en' },
+          components: templateData && templateData.length > 0 ? [
+            {
+              type: 'body',
+              parameters: templateData.map(text => ({ type: 'text', text: String(text) }))
+            }
+          ] : []
+        };
+      } else if (mediaType === 'document') {
         payload.document = {
           link: mediaUrl,
           caption: messageText,
@@ -69,7 +80,9 @@ export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, med
 
   // Graceful Simulation & Audit Mode for Development & Testing
   console.log(`\n========== [META WHATSAPP DISPATCH TO: ${cleanPhone}] ==========`);
-  if (mediaType === 'document') {
+  if (templateName) {
+    console.log(`[TEMPLATE: ${templateName}] Variables: ${JSON.stringify(templateData)}`);
+  } else if (mediaType === 'document') {
     console.log(`[ATTACHMENT: ${mediaFilename} -> ${mediaUrl}]`);
   }
   console.log(messageText);
@@ -104,12 +117,16 @@ _Please note: This link contains proprietary B2B CAD specifications & hallmarked
 *Shraddha Gold Manufacturing HQ*
 🌐 www.shraddhagold.com`;
 
-  return dispatchMetaMessage({ toPhone, messageText });
+  const endDate = accessEnd ? formatDateIST(accessEnd) : 'Authorized Period';
+  
+  return dispatchMetaMessage({ 
+    toPhone, 
+    messageText,
+    templateName: 'portfolio_link_share',
+    templateData: [customerName, shareUrl, endDate]
+  });
 };
 
-/**
- * Sends 6-digit checkout OTP to customer's mobile
- */
 export const sendOtpWhatsApp = async ({ toPhone, otp }) => {
   const messageText = 
 `🔐 *Shraddha Gold India Pvt. Ltd.*
@@ -122,7 +139,12 @@ This OTP is valid for 10 minutes. Please do not share this security code with an
 *Shraddha Gold Commercial Desk*
 🌐 www.shraddhagold.com`;
 
-  return dispatchMetaMessage({ toPhone, messageText });
+  return dispatchMetaMessage({ 
+    toPhone, 
+    messageText,
+    templateName: 'checkout_otp',
+    templateData: [otp]
+  });
 };
 
 /**
@@ -149,7 +171,13 @@ ${itemsText}`;
     results.customer = await dispatchMetaMessage({
       toPhone: order.customerPhone,
       messageText: baseMessage,
-      mediaType: 'text'
+      templateName: 'order_confirmation',
+      templateData: [
+        order.customerName || 'N/A', 
+        order.orderedBy || order.customerName || 'N/A', 
+        order.customerPhone || 'N/A', 
+        itemsText
+      ]
     });
   } catch (err) {
     console.error('[WhatsApp Customer Dispatch Error]:', err.message);
@@ -176,7 +204,13 @@ ${itemsText}`;
         const res = await dispatchMetaMessage({
           toPhone: phone,
           messageText: baseMessage,
-          mediaType: 'text'
+          templateName: 'order_confirmation',
+          templateData: [
+            order.customerName || 'N/A', 
+            order.orderedBy || order.customerName || 'N/A', 
+            order.customerPhone || 'N/A', 
+            itemsText
+          ]
         });
         res.targetPhone = phone;
         results.admin.push(res);

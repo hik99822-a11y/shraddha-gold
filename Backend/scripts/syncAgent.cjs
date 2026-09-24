@@ -7,7 +7,7 @@ const path = require('path');
 const TARGET_FOLDER = process.env.TARGET_FOLDER || "\\\\SRV\\gatisogttech\\SJEP IMAGES"; 
 
 // Live EC2 Backend API (Accessible directly over internet)
-const API_URL = process.env.API_URL || "http://13.126.225.2:5000/api/admin/style-images/agent-sync";
+const API_URL = process.env.API_URL || "https://api.shraddhagold.com/api/admin/style-images/agent-sync";
 
 // Optional Cloudflare Tunnel URL passed as CLI argument
 // Usage: node scripts/syncAgent.cjs https://xxxx.trycloudflare.com
@@ -29,6 +29,27 @@ if (!fs.existsSync(TARGET_FOLDER)) {
     console.error(`\n❌ ERROR: Directory does not exist or is not reachable: ${TARGET_FOLDER}`);
     process.exit(1);
 }
+
+const STATE_FILE = path.join(__dirname, '.sync-state.json');
+
+const loadState = () => {
+    try {
+        if (fs.existsSync(STATE_FILE)) {
+            return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+        }
+    } catch (e) {
+        console.error("Error reading state file:", e.message);
+    }
+    return {};
+};
+
+const saveState = (state) => {
+    try {
+        fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+    } catch (e) {
+        console.error("Error writing state file:", e.message);
+    }
+};
 
 // 1. Recursive function to find all image files
 const getAllImageFiles = (dir, rootDir = dir) => {
@@ -57,7 +78,8 @@ const getAllImageFiles = (dir, rootDir = dir) => {
                         filename: entry.name,
                         relativePath: relativePath,
                         ext: ext,
-                        size: stat.size
+                        size: stat.size,
+                        mtimeMs: stat.mtimeMs
                     });
                 }
             }
@@ -71,13 +93,51 @@ const getAllImageFiles = (dir, rootDir = dir) => {
 // 2. Scan and execute
 const runSync = async () => {
     console.log("Scanning... Please wait.");
-    const imageFiles = getAllImageFiles(TARGET_FOLDER);
     
-    console.log(`✅ Found ${imageFiles.length} images.`);
+    const previousState = loadState();
+    const newState = {};
+    
+    const allImageFiles = getAllImageFiles(TARGET_FOLDER);
+    
+    const imageFiles = [];
+    for (const file of allImageFiles) {
+        const fileKey = file.relativePath;
+        const fileHash = `${file.size}_${file.mtimeMs}`;
+        
+        newState[fileKey] = fileHash;
+
+        if (previousState[fileKey] !== fileHash) {
+            imageFiles.push(file);
+        }
+    }
+    
+    console.log(`✅ Found ${allImageFiles.length} total images in folder.`);
+    console.log(`🚀 ${imageFiles.length} images are NEW or MODIFIED since last sync.`);
     
     if (imageFiles.length === 0) {
-        console.log("Nothing to sync.");
-        return;
+        if (!desktopServerUrl) {
+            console.log("Nothing to sync.");
+            saveState(newState); // Save state just in case some were deleted
+            return;
+        } else {
+            console.log("No new images to sync. Updating Cloudflare URL only...");
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-agent-secret': AGENT_SYNC_SECRET },
+                    body: JSON.stringify({ imageFiles: [], desktopServerUrl })
+                });
+                if (response.ok) {
+                    console.log("✅ Cloudflare URL updated successfully!");
+                    saveState(newState);
+                } else {
+                    console.error("❌ Failed to update Cloudflare URL.");
+                }
+            } catch(e) {
+                console.error("❌ Network error:", e.message);
+            }
+            return;
+        }
     }
 
     const CHUNK_SIZE = 500;
@@ -94,37 +154,61 @@ const runSync = async () => {
     let totalUnmatched = 0;
 
     try {
+        const CONCURRENCY_LIMIT = 2; // Reduced to 3 to avoid Nginx 504 Gateway Timeout
+        
+        // 1. Prepare all chunks first
+        const chunks = [];
         for (let i = 0; i < imageFiles.length; i += CHUNK_SIZE) {
-            const chunk = imageFiles.slice(i, i + CHUNK_SIZE);
-            const payload = { imageFiles: chunk };
-            if (desktopServerUrl) {
-                payload.desktopServerUrl = desktopServerUrl;
-            }
+            chunks.push(imageFiles.slice(i, i + CHUNK_SIZE));
+        }
 
-            const currentChunkNum = Math.floor(i / CHUNK_SIZE) + 1;
-            console.log(`\n⏳ Sending chunk ${currentChunkNum} of ${totalChunks}... (${chunk.length} images)`);
+        console.log(`\n🚀 Sending ${totalChunks} chunks to the server (Processing ${CONCURRENCY_LIMIT} batches concurrently)...`);
 
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-agent-secret': AGENT_SYNC_SECRET
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Server returned status ${response.status} on chunk ${currentChunkNum}: ${errText}`);
-            }
-
-            const result = await response.json();
-            console.log(`✅ Chunk ${currentChunkNum} Success: ${result.matchedCount || 0} matched`);
+        // 2. Process chunks in groups of CONCURRENCY_LIMIT
+        for (let i = 0; i < chunks.length; i += CONCURRENCY_LIMIT) {
+            const batchPromises = [];
+            const currentBatchGroup = chunks.slice(i, i + CONCURRENCY_LIMIT);
             
-            totalScanned += result.totalScanned || 0;
-            totalMatched += result.matchedCount || 0;
-            totalUpdated += result.updatedCount || 0;
-            totalUnmatched += result.unmatchedCount || 0;
+            for (let j = 0; j < currentBatchGroup.length; j++) {
+                const chunk = currentBatchGroup[j];
+                const currentChunkNum = i + j + 1;
+                
+                const payload = { imageFiles: chunk };
+                if (desktopServerUrl) {
+                    payload.desktopServerUrl = desktopServerUrl;
+                }
+
+                console.log(`⏳ Preparing chunk ${currentChunkNum} of ${totalChunks}...`);
+
+                const requestPromise = fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-agent-secret': AGENT_SYNC_SECRET
+                    },
+                    body: JSON.stringify(payload)
+                }).then(async response => {
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        throw new Error(`Server returned status ${response.status} on chunk ${currentChunkNum}: ${errText}`);
+                    }
+                    const result = await response.json();
+                    console.log(`✅ Chunk ${currentChunkNum} Success: ${result.matchedCount || 0} matched`);
+                    return result;
+                });
+                
+                batchPromises.push(requestPromise);
+            }
+            
+            // Wait for this specific group of 5 to finish before sending the next 5
+            const results = await Promise.all(batchPromises);
+            
+            results.forEach(result => {
+                totalScanned += result.totalScanned || 0;
+                totalMatched += result.matchedCount || 0;
+                totalUpdated += result.updatedCount || 0;
+                totalUnmatched += result.unmatchedCount || 0;
+            });
         }
 
         console.log("\n===========================================");
@@ -138,6 +222,9 @@ const runSync = async () => {
             console.log(`- Live Image URL:      ${desktopServerUrl}`);
         }
         console.log("===========================================\n");
+        
+        // Save the state after a successful sync
+        saveState(newState);
         
     } catch (err) {
         console.error("\n❌ FAILED TO SYNC WITH SERVER!");

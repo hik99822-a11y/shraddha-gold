@@ -86,7 +86,8 @@ export const expandStylesForCustomer = (styles = []) => {
           netWeight: vNet,
           qty: vQty,
           rawData: v.rawData || sObj.rawData || {},
-          images: sObj.images || {}
+          images: sObj.images || {},
+          lastExcelImportId: v.lastExcelImportId || sObj.lastExcelImportId
         });
       }
     } else {
@@ -109,7 +110,8 @@ export const expandStylesForCustomer = (styles = []) => {
         netWeight: singleVariant?.netWeight !== undefined && singleVariant?.netWeight !== null ? singleVariant.netWeight : sObj.netWeight,
         qty: singleVariant?.qty !== undefined && singleVariant?.qty !== null ? singleVariant.qty : sObj.qty,
         rawData: singleVariant?.rawData || sObj.rawData || {},
-        images: sObj.images || {}
+        images: sObj.images || {},
+        lastExcelImportId: singleVariant?.lastExcelImportId || sObj.lastExcelImportId
       });
     }
   }

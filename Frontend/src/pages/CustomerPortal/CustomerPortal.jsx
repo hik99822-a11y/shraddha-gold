@@ -797,12 +797,22 @@ const CustomerPortal = ({ isSharedLink = false }) => {
 
   const isStyleNewForReadyStock = (style) => {
     if (getRealQty(style) < 1) return false;
+    
+    // Check if it's from the latest Excel import
+    if (latestImport && latestImport._id) {
+      if (String(style.lastExcelImportId) !== String(latestImport._id)) {
+        return false;
+      }
+    }
+    
+    // Existing category link functionality
     const categoryDateStr = lastSharedAt || (lastSharedAtMap && lastSharedAtMap[style.categoryName]);
     if (categoryDateStr) {
       const sharedDate = new Date(categoryDateStr).getTime();
       const styleDate = new Date(style.createdAt || 0).getTime();
       if (styleDate <= sharedDate) return false;
     }
+    
     return true;
   };
 
@@ -830,7 +840,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
         };
       })
       .filter((grp) => grp.count > 0);
-  }, [categoryGroups, styles, stockSection]);
+  }, [categoryGroups, styles, stockSection, latestImport]);
 
   // 2. Available Categories scoped to selected Category Group and active section
   const availableCategories = useMemo(() => {
@@ -843,7 +853,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
       baseCats = assignedCategories.filter((catName) => groupCatNames.includes(catName));
     }
     return baseCats.filter((catName) => sectionPool.some((s) => s.categoryName === catName));
-  }, [selectedCategoryGroup, assignedCategories, categoryGroups, styles, stockSection]);
+  }, [selectedCategoryGroup, assignedCategories, categoryGroups, styles, stockSection, latestImport]);
 
   // Filter helper for any specific section filter state
   const filterStylesForSection = (filters, isReadyOnly = false) => {
@@ -893,7 +903,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
   // 3. Ready Stock styles (purely filtered by sectionFilters.ready)
   const readyFilteredStyles = useMemo(() => {
     return filterStylesForSection(sectionFilters.ready, true);
-  }, [styles, sectionFilters.ready, categoryGroups]);
+  }, [styles, sectionFilters.ready, categoryGroups, latestImport]);
 
   // 4. Make to Stock (All Design) styles (purely filtered by sectionFilters.all)
   const allFilteredStyles = useMemo(() => {
@@ -916,7 +926,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
       if (selectedCategory !== 'All' && style.categoryName !== selectedCategory) return false;
       return true;
     });
-  }, [styles, stockSection, selectedCategoryGroup, selectedCategory, categoryGroups]);
+  }, [styles, stockSection, selectedCategoryGroup, selectedCategory, categoryGroups, latestImport]);
 
   // 7. Total count of styles in currently active Category Group for active section
   const groupStylesCount = useMemo(() => {
@@ -926,7 +936,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
     const targetGroup = (categoryGroups || []).find((g) => g.name === selectedCategoryGroup);
     const groupCatNames = targetGroup?.categoryNames || [];
     return pool.filter((s) => groupCatNames.includes(s.categoryName)).length;
-  }, [styles, stockSection, selectedCategoryGroup, categoryGroups]);
+  }, [styles, stockSection, selectedCategoryGroup, categoryGroups, latestImport]);
 
   // 8. KT Counts based on current group and category for active section
   const ktCounts = useMemo(() => {
@@ -943,10 +953,9 @@ const CustomerPortal = ({ isSharedLink = false }) => {
     return counts;
   }, [baseFilteredStyles, availableKts]);
 
-  // 9. Total counts for sidebar badges
   const readyStockCount = useMemo(() => {
     return styles.filter(isStyleNewForReadyStock).length;
-  }, [styles, lastSharedAt, lastSharedAtMap]);
+  }, [styles, latestImport, lastSharedAt, lastSharedAtMap]);
 
   const allStockCount = useMemo(() => {
     return styles.length;

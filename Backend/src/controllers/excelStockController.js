@@ -634,114 +634,134 @@ export const deleteExcelHistory = async (req, res) => {
 
     const wasLatest = imp.isLatest;
 
-    const detectedColumns = imp.detectedColumns || [];
-    const mappings = findColumnMappings(detectedColumns);
-    const deductions = {}; // { styleCode: { variants: { variantKey: qty }, totalQty: qty } }
+    // Build a fallback map from all OTHER completed imports
+    // so we can restore variants that were overwritten by the deleted import.
+    const otherImports = await ExcelImport.find({ _id: { $ne: imp._id }, status: 'Completed' }).sort({ uploadDateTime: 1 });
+    const fallbackMap = {}; // { styleCode: { variantKey: variantObj } }
 
-    if (Array.isArray(imp.data)) {
-      for (const row of imp.data) {
-        // Extract style code
-        const rawStyleCode = mappings.styleCodeColIdx >= 0 ? row[detectedColumns[mappings.styleCodeColIdx]] : null;
-        const styleCode = rawStyleCode ? String(rawStyleCode).trim().toUpperCase() : getRowStyleCode(row);
+    for (const oImp of otherImports) {
+      if (!Array.isArray(oImp.data)) continue;
+      const cols = oImp.detectedColumns || [];
+      const oMaps = findColumnMappings(cols);
+
+      for (const row of oImp.data) {
+        const sc = oMaps.styleCodeColIdx >= 0 ? row[cols[oMaps.styleCodeColIdx]] : null;
+        const styleCode = sc ? String(sc).trim().toUpperCase() : getRowStyleCode(row);
         if (!styleCode) continue;
 
-        // Extract qty
-        let qty = 0;
-        if (mappings.qtyColIdx >= 0 && row[detectedColumns[mappings.qtyColIdx]]) {
-          const valStr = String(row[detectedColumns[mappings.qtyColIdx]]).replace(/[^0-9.-]/g, '');
-          qty = parseInt(valStr, 10) || 0;
-        } else {
-          // Fallback
-          const qtyKey = Object.keys(row).find(k => /^(qty|quantity|stock)$/i.test(k.replace(/[^a-z0-9]/gi, '')));
-          if (qtyKey) {
-            qty = parseInt(String(row[qtyKey]).replace(/[^0-9.-]/g, ''), 10) || 0;
-          }
-        }
-        if (qty <= 0) continue;
-
-        // Extract variant key
         let purity = '';
-        const explicitPurity = mappings.purityColIdx >= 0 ? String(row[detectedColumns[mappings.purityColIdx]] || '').trim() : '';
+        const explicitPurity = oMaps.purityColIdx >= 0 ? String(row[cols[oMaps.purityColIdx]] || '').trim() : '';
         let itemVal = '';
-        if (mappings.itemColIdx >= 0 && row[detectedColumns[mappings.itemColIdx]]) {
-          itemVal = String(row[detectedColumns[mappings.itemColIdx]]).trim();
-        }
+        if (oMaps.itemColIdx >= 0 && row[cols[oMaps.itemColIdx]]) itemVal = String(row[cols[oMaps.itemColIdx]]).trim();
         if (!itemVal && row['Item']) itemVal = String(row['Item']).trim();
         if (!itemVal && row['ITEM']) itemVal = String(row['ITEM']).trim();
 
         const candidateStrings = [
-          String(row['Item'] || ''),
-          String(row['ITEM'] || ''),
-          itemVal,
-          explicitPurity,
-          String(row['InwardSKUNo'] || ''),
-          String(row['Purity'] || '')
+          String(row['Item'] || ''), String(row['ITEM'] || ''), itemVal, explicitPurity, String(row['InwardSKUNo'] || ''), String(row['Purity'] || '')
         ].filter(Boolean);
 
         let detectedPurity = null;
         for (const cand of candidateStrings) {
           const ext = extractKtFromItem(cand);
-          if (ext) {
-            detectedPurity = `${ext.replace(/KT$/i, '')} KT`;
-            break;
-          }
+          if (ext) { detectedPurity = `${ext.replace(/KT$/i, '')} KT`; break; }
         }
         if (detectedPurity) purity = detectedPurity;
         else if (explicitPurity) purity = explicitPurity;
 
         const variantKey = (itemVal || purity || '').toUpperCase();
 
-        if (!deductions[styleCode]) {
-          deductions[styleCode] = { variants: {}, totalQty: 0 };
+        if (!fallbackMap[styleCode]) fallbackMap[styleCode] = {};
+        
+        let qty = 0;
+        if (oMaps.qtyColIdx >= 0 && row[cols[oMaps.qtyColIdx]]) {
+          qty = parseInt(String(row[cols[oMaps.qtyColIdx]]).replace(/[^0-9.-]/g, ''), 10) || 0;
+        } else {
+          const qtyKey = Object.keys(row).find(k => /^(qty|quantity|stock)$/i.test(k.replace(/[^a-z0-9]/gi, '')));
+          if (qtyKey) qty = parseInt(String(row[qtyKey]).replace(/[^0-9.-]/g, ''), 10) || 0;
         }
-        deductions[styleCode].totalQty += qty;
-        deductions[styleCode].variants[variantKey] = (deductions[styleCode].variants[variantKey] || 0) + qty;
+
+        let grossWeight = 0;
+        if (oMaps.grossWtColIdx >= 0 && row[cols[oMaps.grossWtColIdx]]) {
+          grossWeight = parseFloat(String(row[cols[oMaps.grossWtColIdx]]).replace(/[^0-9.]/g, '')) || 0;
+        }
+        let netWeight = grossWeight;
+        if (oMaps.netWtColIdx >= 0 && row[cols[oMaps.netWtColIdx]]) {
+          netWeight = parseFloat(String(row[cols[oMaps.netWtColIdx]]).replace(/[^0-9.]/g, '')) || grossWeight;
+        }
+
+        let itemCode = '';
+        if (oMaps.itemCodeColIdx >= 0 && row[cols[oMaps.itemCodeColIdx]]) {
+          itemCode = String(row[cols[oMaps.itemCodeColIdx]]).trim();
+        } else {
+           const ktCode = extractKtFromItem(itemVal);
+           if (ktCode) itemCode = `G${ktCode.replace(/KT$/i, '')}`;
+           else if (itemVal) itemCode = itemVal;
+        }
+
+        fallbackMap[styleCode][variantKey] = {
+           item: itemVal,
+           itemCode,
+           purity,
+           grossWeight,
+           netWeight,
+           qty,
+           rawData: row,
+           lastExcelImportId: oImp._id
+        };
       }
     }
 
-    const styleCodesToProcess = Object.keys(deductions);
-    const styles = await Style.find({ styleCode: { $in: styleCodesToProcess } });
+    const styles = await Style.find({
+      $or: [
+        { lastExcelImportId: imp._id },
+        { 'itemVariants.lastExcelImportId': imp._id }
+      ]
+    });
+
     const stylesToPurge = [];
     const stylesToUpdate = [];
 
     for (const style of styles) {
-      const deductInfo = deductions[style.styleCode];
-      if (!deductInfo) continue;
-
-      let remainingTotal = 0;
       if (style.itemVariants && style.itemVariants.length > 0) {
-        style.itemVariants.forEach(variant => {
-          const vKey = (variant.item || variant.purity || '').toUpperCase();
-          const deductVariantQty = deductInfo.variants[vKey] || 0;
-          variant.qty = Math.max(0, (variant.qty || 0) - deductVariantQty);
-          remainingTotal += variant.qty;
-        });
-      } else {
-        remainingTotal = Math.max(0, (style.qty || 0) - deductInfo.totalQty);
-      }
-      
-      style.qty = remainingTotal;
-
-      if (style.qty <= 0) {
-        stylesToPurge.push(style.styleCode);
-      } else {
-        if (style.rawData) {
-          let updatedRawData = false;
-          if (mappings.qtyColIdx >= 0 && detectedColumns[mappings.qtyColIdx]) {
-             style.rawData[detectedColumns[mappings.qtyColIdx]] = style.qty;
-             updatedRawData = true;
+        const remainingVariants = [];
+        for (const v of style.itemVariants) {
+          if (String(v.lastExcelImportId) !== String(imp._id)) {
+            remainingVariants.push(v);
           } else {
+            // It was overwritten/added by the deleted file.
+            // Check if it existed in previous files (fallback map).
+            const vKey = (v.item || v.purity || '').toUpperCase();
+            if (fallbackMap[style.styleCode] && fallbackMap[style.styleCode][vKey]) {
+              remainingVariants.push(fallbackMap[style.styleCode][vKey]); // RESTORE from old file!
+            }
+          }
+        }
+
+        if (remainingVariants.length === 0) {
+          stylesToPurge.push(style.styleCode);
+        } else {
+          style.itemVariants = remainingVariants;
+          style.qty = remainingVariants.reduce((sum, v) => sum + (v.qty || 0), 0);
+          
+          if (String(style.lastExcelImportId) === String(imp._id)) {
+            style.lastExcelImportId = remainingVariants[0].lastExcelImportId;
+          }
+          
+          // Re-calculate rawData qty if needed
+          if (style.rawData) {
              const qtyKey = Object.keys(style.rawData).find(k => /^(qty|quantity|stock)$/i.test(k.replace(/[^a-z0-9]/gi, '')));
              if (qtyKey) {
                 style.rawData[qtyKey] = style.qty;
-                updatedRawData = true;
+                style.markModified('rawData');
              }
           }
-          if (updatedRawData) {
-             style.markModified('rawData');
-          }
+
+          stylesToUpdate.push(style);
         }
-        stylesToUpdate.push(style);
+      } else {
+        if (String(style.lastExcelImportId) === String(imp._id)) {
+          stylesToPurge.push(style.styleCode);
+        }
       }
     }
 

@@ -443,7 +443,8 @@ export const processExcelFile = async ({ fileBuffer, fileName, userId }) => {
                 grossWeight: row.grossWeight,
                 netWeight: row.netWeight,
                 qty: row.qty || 0,
-                rawData: row.rawData
+                rawData: row.rawData,
+                lastExcelImportId: importLog._id
               });
 
               uniqueStylesMap.set(styleCode, {
@@ -463,7 +464,8 @@ export const processExcelFile = async ({ fileBuffer, fileName, userId }) => {
                   grossWeight: row.grossWeight,
                   netWeight: row.netWeight,
                   qty: row.qty || 0,
-                  rawData: row.rawData
+                  rawData: row.rawData,
+                  lastExcelImportId: importLog._id
                 });
               }
             }
@@ -498,7 +500,11 @@ export const processExcelFile = async ({ fileBuffer, fileName, userId }) => {
               for (const [variantKey, newVar] of item.variantsMap.entries()) {
                 if (existingVariantsMap.has(variantKey)) {
                   const ev = existingVariantsMap.get(variantKey);
-                  ev.qty = (ev.qty || 0) + (newVar.qty || 0);
+                  ev.qty = newVar.qty || 0;
+                  ev.grossWeight = newVar.grossWeight || ev.grossWeight;
+                  ev.netWeight = newVar.netWeight || ev.netWeight;
+                  ev.rawData = newVar.rawData;
+                  ev.lastExcelImportId = importLog._id;
                   existingVariantsMap.set(variantKey, ev);
                 } else {
                   existingVariantsMap.set(variantKey, newVar);

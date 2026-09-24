@@ -73,22 +73,22 @@ export const extractMetadataFromFilename = (filename) => {
   const ext = path.extname(filename);
   const baseName = path.basename(filename, ext).trim();
 
-  // 1. Detect KT purity
+  // 1. Detect KT purity (e.g. 18KT, G18KT, 22K)
   let detectedKT = null;
-  if (/(?:^|[_\-\s])18\s*K(?:T)?(?:[_\-\s]|$)/i.test(baseName)) {
+  if (/(?:^|[_\-\s])[A-Za-z]?18\s*K(?:T)?/i.test(baseName)) {
     detectedKT = '18KT';
-  } else if (/(?:^|[_\-\s])20\s*K(?:T)?(?:[_\-\s]|$)/i.test(baseName)) {
+  } else if (/(?:^|[_\-\s])[A-Za-z]?20\s*K(?:T)?/i.test(baseName)) {
     detectedKT = '20KT';
-  } else if (/(?:^|[_\-\s])22\s*K(?:T)?(?:[_\-\s]|$)/i.test(baseName)) {
+  } else if (/(?:^|[_\-\s])[A-Za-z]?22\s*K(?:T)?/i.test(baseName)) {
     detectedKT = '22KT';
   }
 
-  // 2. Detect Slot (1..4)
+  // 2. Detect Slot (1..4) (e.g. _1, (1), _Slot1, Slot 1)
   let detectedSlot = null;
   const slotMatch =
-    baseName.match(/[_\-\s]+0?([1-4])$/i) ||
+    baseName.match(/[_\-\s]+(?:Slot)?\s*0?([1-4])$/i) ||
     baseName.match(/\s*\(([1-4])\)$/i) ||
-    baseName.match(/[_\-\s]+0?([1-4])[_\-\s]+/i);
+    baseName.match(/[_\-\s]+(?:Slot)?\s*0?([1-4])[_\-\s]+/i);
 
   if (slotMatch && slotMatch[1]) {
     detectedSlot = parseInt(slotMatch[1], 10);
@@ -96,10 +96,10 @@ export const extractMetadataFromFilename = (filename) => {
 
   // 3. Extract clean styleCode candidate
   let cleaned = baseName
-    .replace(/(?:18|20|22)\s*K(?:T)?/gi, '')
-    .replace(/[_\-\s]+0?[1-4]$/i, '')
+    .replace(/[A-Za-z]?(?:18|20|22)\s*K(?:T)?(?:\s*(?:YELLOW|ROSE|WHITE|GOLD))?/gi, '')
+    .replace(/[_\-\s]+(?:Slot)?\s*0?[1-4]$/i, '')
     .replace(/\s*\([1-4]\)$/i, '')
-    .replace(/[_\-\s]+0?[1-4](?=[_\-\s])/i, '')
+    .replace(/[_\-\s]+(?:Slot)?\s*0?[1-4](?=[_\-\s])/i, '')
     .replace(/[_\-\s]+$/, '')
     .trim();
 

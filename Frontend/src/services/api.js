@@ -1,9 +1,9 @@
 import secureStorage from '../utils/secureStorage';
 
-export const BASE_URL = 'https://api.shraddhagold.com';
-export const API_URL = `${BASE_URL}/api`;
-// export const BASE_URL = "http://localhost:5000";
+// export const BASE_URL = 'https://api.shraddhagold.com';
 // export const API_URL = `${BASE_URL}/api`;
+export const BASE_URL = "http://localhost:5000";
+export const API_URL = `${BASE_URL}/api`;
 
 /**
  * Universal fetch wrapper with authorization header injection
@@ -20,6 +20,7 @@ const request = async (endpoint, options = {}) => {
 
   try {
     const res = await fetch(`${API_URL}${endpoint}`, {
+      cache: 'no-store', // Prevent browser caching of API responses (e.g., stale data after delete)
       ...options,
       headers
     });
@@ -54,6 +55,7 @@ export const downloadRequest = async (endpoint, options = {}) => {
 
   try {
     const res = await fetch(`${API_URL}${endpoint}`, {
+      cache: 'no-store', // Prevent browser caching of downloaded files
       ...options,
       headers
     });

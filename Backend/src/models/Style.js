@@ -68,6 +68,10 @@ const itemVariantSchema = new mongoose.Schema(
     rawData: {
       type: mongoose.Schema.Types.Mixed,
       default: {}
+    },
+    lastExcelImportId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ExcelImport'
     }
   },
   { _id: false }
