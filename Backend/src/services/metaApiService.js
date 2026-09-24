@@ -7,7 +7,7 @@ import { formatDateIST, formatDateTimeIST } from '../utils/dateUtils.js';
 /**
  * Generic WhatsApp message dispatcher (handles Live Meta API or graceful development simulation)
  */
-export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, mediaUrl, mediaFilename, templateName, templateData }) => {
+export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, mediaUrl, mediaFilename, templateName, templateData, languageCode = 'en' }) => {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   let cleanPhone = (toPhone || '').replace(/[^0-9]/g, '');
@@ -29,15 +29,34 @@ export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, med
       };
 
       if (templateName) {
+        const components = [];
+        
+        if (mediaType === 'document' && mediaUrl) {
+          components.push({
+            type: 'header',
+            parameters: [
+              {
+                type: 'document',
+                document: {
+                  link: mediaUrl,
+                  filename: mediaFilename || 'Document.pdf'
+                }
+              }
+            ]
+          });
+        }
+        
+        if (templateData && templateData.length > 0) {
+          components.push({
+            type: 'body',
+            parameters: templateData.map(text => ({ type: 'text', text: String(text) }))
+          });
+        }
+
         payload.template = {
           name: templateName,
-          language: { code: 'en' },
-          components: templateData && templateData.length > 0 ? [
-            {
-              type: 'body',
-              parameters: templateData.map(text => ({ type: 'text', text: String(text) }))
-            }
-          ] : []
+          language: { code: languageCode },
+          components: components
         };
       } else if (mediaType === 'document') {
         payload.document = {
@@ -52,7 +71,7 @@ export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, med
         };
       }
 
-      const response = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
+      const response = await fetch(`https://graph.facebook.com/v26.0/${phoneId}/messages`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -99,45 +118,36 @@ export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, med
 /**
  * Sends portfolio link share message
  */
-export const sendWhatsAppMessage = async ({ toPhone, customerName, shareUrl, accessEnd }) => {
+export const sendWhatsAppMessage = async ({ toPhone, customerName, shareUrl, accessEnd, mediaType, mediaUrl, mediaFilename }) => {
   const messageText = 
-`✨ *Shraddha Gold India Pvt. Ltd. — Exclusive Jewellery Portfolio* ✨
+`Dear ${customerName},
 
-Dear *${customerName}*,
+Your design is available at the link below:
 
-Your bespoke jewellery catalog and design collections are ready for viewing.
-
-🔗 *Access Link:*
 ${shareUrl}
 
-⏳ *Access Window Valid Until:* ${accessEnd ? formatDateIST(accessEnd) : 'Authorized Period'}
+Thank you,
+SHRADDHA GOLDS INDIA PVT LTD`;
 
-_Please note: This link contains proprietary B2B CAD specifications & hallmarked collections curated exclusively for your firm._
-
-*Shraddha Gold Manufacturing HQ*
-🌐 www.shraddhagold.com`;
-
-  const endDate = accessEnd ? formatDateIST(accessEnd) : 'Authorized Period';
-  
   return dispatchMetaMessage({ 
     toPhone, 
     messageText,
+    mediaType,
+    mediaUrl,
+    mediaFilename,
     templateName: 'portfolio_link_share',
-    templateData: [customerName, shareUrl, endDate]
+    templateData: [customerName, shareUrl],
+    languageCode: 'en_US'
   });
 };
 
 export const sendOtpWhatsApp = async ({ toPhone, otp }) => {
   const messageText = 
-`🔐 *Shraddha Gold India Pvt. Ltd.*
+`Your verification code is ${otp}.
 
-Your verification code for placing your jewellery order is:
-👉 *${otp}*
+This code is valid for 5 minutes. Please do not share it with anyone.
 
-This OTP is valid for 10 minutes. Please do not share this security code with anyone.
-
-*Shraddha Gold Commercial Desk*
-🌐 www.shraddhagold.com`;
+SHRADDHA GOLDS INDIA PVT LTD`;
 
   return dispatchMetaMessage({ 
     toPhone, 
@@ -154,8 +164,8 @@ export const sendOrderWhatsAppNotifications = async ({ order, fullPdfUrl }) => {
   const results = { customer: null, admin: null };
 
   const itemsText = (order.items || [])
-    .map((it) => `Style Code: ${it.styleCode}\nKT: ${it.kt || '22K'}\nQuantity: ${it.quantity || 1}`)
-    .join('\n\n');
+    .map((it) => `Style: ${it.styleCode} | KT: ${it.kt || '22K'} | Qty: ${it.quantity || 1}`)
+    .join('  ---  ');
 
   const baseMessage = 
 `*New Order Placed*
@@ -168,19 +178,45 @@ ${itemsText}`;
 
   // 1. Dispatch to Customer
   try {
-    results.customer = await dispatchMetaMessage({
-      toPhone: order.customerPhone,
-      messageText: baseMessage,
-      templateName: 'order_confirmation',
-      templateData: [
-        order.customerName || 'N/A', 
-        order.orderedBy || order.customerName || 'N/A', 
-        order.customerPhone || 'N/A', 
-        itemsText
-      ]
-    });
+    let customerPhones = [order.customerPhone].filter(Boolean);
+    
+    // Fetch all customer phones if linked to a Customer account
+    if (order.customer) {
+      try {
+        const Customer = (await import('../models/Customer.js')).default;
+        const custDoc = await Customer.findById(order.customer).select('phones');
+        if (custDoc && Array.isArray(custDoc.phones) && custDoc.phones.length > 0) {
+          customerPhones = custDoc.phones;
+        }
+      } catch (dbErr) {
+        console.error('[WhatsApp Customer Phone Fetch Error]:', dbErr.message);
+      }
+    }
+
+    results.customer = [];
+    for (const phone of customerPhones) {
+      if (!phone) continue;
+      try {
+        const res = await dispatchMetaMessage({
+          toPhone: phone,
+          messageText: baseMessage,
+          templateName: 'order_confirmation',
+          templateData: [
+            order.customerName || 'N/A', 
+            order.orderedBy || order.customerName || 'N/A', 
+            order.customerPhone || 'N/A', 
+            itemsText
+          ]
+        });
+        res.targetPhone = phone;
+        results.customer.push(res);
+      } catch (dispatchErr) {
+        console.error(`[WhatsApp Customer Dispatch Error to ${phone}]:`, dispatchErr.message);
+        results.customer.push({ success: false, targetPhone: phone, error: dispatchErr.message });
+      }
+    }
   } catch (err) {
-    console.error('[WhatsApp Customer Dispatch Error]:', err.message);
+    console.error('[WhatsApp Customer Processing Error]:', err.message);
     results.customer = { success: false, error: err.message };
   }
 

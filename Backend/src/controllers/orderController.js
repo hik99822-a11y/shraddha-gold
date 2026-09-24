@@ -74,12 +74,16 @@ const createOrderDocumentAndDispatch = async (payload) => {
   const fullPdfUrl = `${baseUrl}/orders/${order._id}/pdf`;
   const waResults = await sendOrderWhatsAppNotifications({ order, fullPdfUrl });
 
-  if (waResults.customer?.success) {
+  let custRes = waResults.customer;
+  if (Array.isArray(custRes)) {
+    custRes = custRes.find(r => r.success) || custRes[0];
+  }
+  if (custRes && custRes.success) {
     order.whatsappDispatches.customer = {
-      targetPhone: cleanPhone,
-      status: waResults.customer.mode === 'LIVE_META_API' ? 'Sent' : 'Simulated',
+      targetPhone: custRes.targetPhone || cleanPhone,
+      status: custRes.mode === 'LIVE_META_API' ? 'Sent' : 'Simulated',
       sentAt: new Date(),
-      messageId: waResults.customer.messageId || ''
+      messageId: custRes.messageId || ''
     };
   }
   let adminRes = waResults.admin;
@@ -407,7 +411,7 @@ export const sendCheckoutOtp = async (req, res) => {
 
     // Generate cryptographically random 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
 
     // Resolve customer strictly from database
     let customer = await resolveCustomerForCheckout({ token, cleanPhone, customerName });

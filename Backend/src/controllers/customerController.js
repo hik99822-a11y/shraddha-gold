@@ -287,11 +287,30 @@ export const updateCustomer = async (req, res) => {
       customer.shareFormat = shareFormat === 'PDF' ? 'PDF' : 'Link';
     }
     if (categoryAccess !== undefined && Array.isArray(categoryAccess)) {
-      customer.categoryAccess = categoryAccess.map((ca) => ({
-        ...ca,
-        shareToken: ca.shareToken ? ca.shareToken : crypto.randomBytes(16).toString('hex'),
-        shareLinkCreatedAt: ca.shareLinkCreatedAt ? ca.shareLinkCreatedAt : new Date()
-      }));
+      customer.categoryAccess = categoryAccess.map((ca) => {
+        const shareLinkCreatedAt = ca.shareLinkCreatedAt ? new Date(ca.shareLinkCreatedAt) : new Date();
+        const catDelay = !isNaN(parseInt(ca.shareAfterDays, 10)) ? Math.max(0, parseInt(ca.shareAfterDays, 10)) : 0;
+        const catShareTime = ca.shareTime || customer.linkShareTime || '10:00';
+        
+        const dispatchDate = new Date(shareLinkCreatedAt.getTime());
+        dispatchDate.setDate(dispatchDate.getDate() + catDelay);
+        if (catShareTime && typeof catShareTime === 'string' && catShareTime.includes(':')) {
+          const [h, m] = catShareTime.split(':').map((v) => parseInt(v, 10));
+          if (!isNaN(h) && !isNaN(m)) dispatchDate.setHours(h, m, 0, 0);
+        }
+        
+        if (dispatchDate <= new Date()) {
+          dispatchDate.setTime(new Date().getTime());
+        }
+
+        return {
+          ...ca,
+          shareToken: ca.shareToken ? ca.shareToken : crypto.randomBytes(16).toString('hex'),
+          shareLinkCreatedAt,
+          dispatchScheduledAt: dispatchDate,
+          dispatchStatus: ca.dispatchStatus === 'Sent' && ca.shareAfterDays === undefined ? 'Sent' : 'Pending'
+        };
+      });
       customer.markModified('categoryAccess');
       const catIdsFromAccess = categoryAccess.map((ca) => ca.category).filter(Boolean);
       if (catIdsFromAccess.length > 0) {
@@ -644,14 +663,20 @@ export const scheduleCustomerShare = async (req, res) => {
       // but Meta message sending handles text for now.
       
       try {
-        const result = await sendWhatsAppMessage({
-          toPhone: phoneToSend,
-          customerName: customer.name,
-          shareUrl,
-          accessEnd: linkExpiresAt,
-          mediaType: categoryMatch && categoryMatch.shareFormat === 'PDF' ? 'document' : 'text',
-          mediaUrl: '' // PDF generation would be needed here for manual immediate send, left as text with url for now
-        });
+        const phonesToNotify = Array.isArray(customer.phones) && customer.phones.length > 0 ? customer.phones : [phoneToSend];
+        
+        const dispatchPromises = phonesToNotify.filter(Boolean).map(phone => 
+          sendWhatsAppMessage({
+            toPhone: phone,
+            customerName: customer.name,
+            shareUrl,
+            accessEnd: linkExpiresAt,
+            mediaType: categoryMatch && categoryMatch.shareFormat === 'PDF' ? 'document' : 'text',
+            mediaUrl: '' // PDF generation would be needed here for manual immediate send, left as text with url for now
+          })
+        );
+
+        await Promise.all(dispatchPromises);
 
         await customer.save();
 

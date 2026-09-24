@@ -149,6 +149,8 @@ export const executePendingScheduledShares = async () => {
                 mediaUrl,
                 mediaFilename
               });
+              // Prevent Meta API burst rate-limits (Spam drop)
+              await new Promise(resolve => setTimeout(resolve, 3000));
             } catch (err) {
               console.error(`[Scheduler Meta API Error to ${phone}]:`, err.message);
             }
