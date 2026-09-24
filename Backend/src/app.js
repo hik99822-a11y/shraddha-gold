@@ -152,7 +152,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/customer', customerRoutes);
 app.use('/api/shared', sharedRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api/webhook', webhookRoutes);
+app.use('/api/whatsapp', webhookRoutes);
 
 // Error Handling Middlewares
 app.use(notFound);

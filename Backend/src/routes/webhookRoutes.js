@@ -4,9 +4,9 @@ import { verifyWebhook, handleWebhookEvents } from '../controllers/webhookContro
 const router = express.Router();
 
 // GET endpoint to verify the webhook (used by Meta during setup)
-router.get('/whatsapp', verifyWebhook);
+router.get('/webhook', verifyWebhook);
 
 // POST endpoint to receive incoming webhook events (messages, statuses)
-router.post('/whatsapp', handleWebhookEvents);
+router.post('/webhook', handleWebhookEvents);
 
 export default router;
