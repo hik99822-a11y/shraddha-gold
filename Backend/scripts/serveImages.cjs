@@ -88,7 +88,8 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  const parsedUrl = url.parse(req.url, true);
+  const baseURL = `http://${req.headers.host || 'localhost'}`;
+  const parsedUrl = new URL(req.url, baseURL);
   let pathname = parsedUrl.pathname || '/';
 
   // 1. Health check endpoint

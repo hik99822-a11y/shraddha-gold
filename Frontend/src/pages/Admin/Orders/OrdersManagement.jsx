@@ -1328,7 +1328,7 @@ const OrdersManagement = ({ orderType = 'Regular' }) => {
       {/* Lightbox Zoom */}
       {previewImage && (
         <div className="admin-modal-backdrop z-[1200]" onClick={() => setPreviewImage(null)}>
-          <div className="max-w-xl p-2 bg-white rounded-lg shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
+          <div className="max-w-md p-2 bg-white rounded-lg shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setPreviewImage(null)}
               className="absolute top-4 right-4 bg-black/60 text-white rounded-full p-2 hover:bg-black"

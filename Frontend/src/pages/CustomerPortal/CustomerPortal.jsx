@@ -652,7 +652,12 @@ const CustomerPortal = ({ isSharedLink = false }) => {
     try {
       setLoading(true);
       setError('');
-      if (isShared && token) {
+      
+      // If the user is an authenticated customer, bypass the shared link restrictions 
+      // and load their full customer portal to ensure they see the latest data identically.
+      const shouldFetchAsCustomer = user && user.role === 'customer';
+
+      if (isShared && token && !shouldFetchAsCustomer) {
         const res = await sharedApi.getSharedContent(token);
         if (res.success) {
           if (res.requiresLogin) {
@@ -660,8 +665,6 @@ const CustomerPortal = ({ isSharedLink = false }) => {
             return;
           }
           const p = res.portfolio || res;
-
-          // Removed the forced redirect to /customer/portal so the user stays on the isolated category link.
 
           setData({
             customer: {
@@ -683,6 +686,8 @@ const CustomerPortal = ({ isSharedLink = false }) => {
             availableItems: p.availableItems || [],
             availableKts: p.availableKts || [],
             latestImport: p.latestImport || null,
+            lastSharedAt: p.lastSharedAt || null,
+            lastSharedAtMap: p.lastSharedAtMap || {},
             accessType: p.accessType || 'Without Login',
             token: p.token || token,
             categoryName: p.categoryName || null,
@@ -708,7 +713,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
 
   useEffect(() => {
     fetchPortal();
-  }, [isShared, token]);
+  }, [isShared, token, user]);
 
   const handleLogout = () => {
     logout();
@@ -796,7 +801,12 @@ const CustomerPortal = ({ isSharedLink = false }) => {
   const assignedCategories = customer?.assignedCategories || [];
 
   const isStyleNewForReadyStock = (style) => {
-    return getRealQty(style) >= 1;
+    const hasQty = getRealQty(style) >= 1;
+    if (latestImport && latestImport._id) {
+      if (!style.lastExcelImportId) return false;
+      return hasQty && String(style.lastExcelImportId) === String(latestImport._id);
+    }
+    return hasQty;
   };
 
   const availableKts = useMemo(() => {
@@ -1099,7 +1109,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
               </div>
               <div className="portal-sidebar-partner-role">
                 <span className="portal-sidebar-live-dot"></span>
-                <span>{isShared ? 'Verified Share Link' : (customer?.name || user?.companyName || 'Verified Partner')}</span>
+                <span>{isShared && !user ? 'Verified Share Link' : (customer?.name || user?.companyName || 'Verified Partner')}</span>
               </div>
             </div>
           </div>
@@ -1139,7 +1149,7 @@ const CustomerPortal = ({ isSharedLink = false }) => {
             </button>
 
             {/* User Dropdown (only for authenticated logged-in session) */}
-            {!isShared && (
+            {(user || !isShared) && (
               <div className="relative">
                 <button
                   type="button"
@@ -1675,11 +1685,12 @@ const CustomerPortal = ({ isSharedLink = false }) => {
 
       {/* Lightbox Zoom for Uploaded Photos */}
       {previewImage && (
-        <div className="admin-modal-backdrop" onClick={() => setPreviewImage(null)} style={{ zIndex: 1000 }}>
-          <div className="max-w-3xl max-h-[90vh] p-3 bg-white rounded-xl shadow-2xl relative flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+        <div className="portal-lightbox-backdrop" onClick={() => setPreviewImage(null)}>
+          <div className="portal-lightbox-container" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setPreviewImage(null)}
-              className="absolute top-4 right-4 bg-black/60 text-white rounded-full p-2 hover:bg-black transition-colors z-50"
+              className="portal-lightbox-close"
+              title="Close"
             >
               <X size={18} />
             </button>
@@ -1694,10 +1705,10 @@ const CustomerPortal = ({ isSharedLink = false }) => {
                       currentIndex: prev.currentIndex === 0 ? prev.images.length - 1 : prev.currentIndex - 1
                     }));
                   }}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 z-50 shadow-md transition-colors"
+                  className="portal-lightbox-nav portal-lightbox-nav-prev"
                   title="Previous image"
                 >
-                  <ChevronLeft size={24} />
+                  <ChevronLeft size={22} />
                 </button>
                 <button
                   onClick={(e) => {
@@ -1707,22 +1718,78 @@ const CustomerPortal = ({ isSharedLink = false }) => {
                       currentIndex: prev.currentIndex === prev.images.length - 1 ? 0 : prev.currentIndex + 1
                     }));
                   }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white rounded-full p-2 z-50 shadow-md transition-colors"
+                  className="portal-lightbox-nav portal-lightbox-nav-next"
                   title="Next image"
                 >
-                  <ChevronRight size={24} />
+                  <ChevronRight size={22} />
                 </button>
               </>
             )}
 
-            <img
-              src={previewImage.images ? previewImage.images[previewImage.currentIndex] : previewImage.url}
-              alt={previewImage.title}
-              className="max-h-[75vh] w-auto mx-auto rounded-lg object-contain bg-gray-50"
-            />
-            <div className="text-center text-xs font-semibold text-text-primary pt-3">
-              {previewImage.title} {previewImage.images?.length > 1 && `(${previewImage.currentIndex + 1}/${previewImage.images.length})`}
+            <div className="portal-lightbox-image-wrap">
+              <div
+                className="portal-lightbox-zoom-container cursor-crosshair overflow-hidden inline-flex justify-center items-center rounded-lg"
+                style={{ maxWidth: '100%', maxHeight: '100%', position: 'relative' }}
+                onMouseMove={(e) => {
+                  // Disable on touch devices
+                  if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) return;
+                  
+                  const container = e.currentTarget;
+                  const img = container.querySelector('img');
+                  if (!img) return;
+
+                  const { left, top, width, height } = container.getBoundingClientRect();
+                  const x = ((e.clientX - left) / width) * 100;
+                  const y = ((e.clientY - top) / height) * 100;
+                  
+                  img.style.transformOrigin = `${x}% ${y}%`;
+                  img.style.transform = 'scale(2.5)';
+                }}
+                onMouseLeave={(e) => {
+                  const img = e.currentTarget.querySelector('img');
+                  if (!img) return;
+                  img.style.transformOrigin = 'center center';
+                  img.style.transform = 'scale(1)';
+                  img.style.transition = 'transform 0.3s ease-out';
+                }}
+                onMouseEnter={(e) => {
+                  const img = e.currentTarget.querySelector('img');
+                  if (!img) return;
+                  img.style.transition = 'transform 0.15s ease-out';
+                }}
+              >
+                <img
+                  src={previewImage.images ? previewImage.images[previewImage.currentIndex] : previewImage.url}
+                  alt={previewImage.title}
+                  className="portal-lightbox-image"
+                  style={{ transition: 'transform 0.3s ease-out', willChange: 'transform' }}
+                />
+              </div>
             </div>
+
+            <div className="portal-lightbox-caption">
+              <span className="portal-lightbox-title">{previewImage.title}</span>
+              {previewImage.images?.length > 1 && (
+                <span className="portal-lightbox-counter">
+                  {previewImage.currentIndex + 1} / {previewImage.images.length}
+                </span>
+              )}
+            </div>
+
+            {previewImage.images?.length > 1 && (
+              <div className="portal-lightbox-dots">
+                {previewImage.images.map((_, idx) => (
+                  <button
+                    key={idx}
+                    className={`portal-lightbox-dot ${idx === previewImage.currentIndex ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPreviewImage(prev => ({ ...prev, currentIndex: idx }));
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

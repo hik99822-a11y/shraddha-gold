@@ -80,6 +80,67 @@ const StyleImagesManagement = () => {
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
+  const [limit, setLimit] = useState(25);
+
+  const renderPageNumbers = () => {
+    const { page, pages } = pagination;
+    if (pages <= 1) return null;
+
+    const pageButtons = [];
+    
+    const addPageBtn = (pageNum) => {
+      const isActive = page === pageNum;
+      pageButtons.push(
+        <button
+          key={pageNum}
+          type="button"
+          onClick={() => setPagination({ ...pagination, page: pageNum })}
+          className={`admin-pagination-btn ${isActive ? 'active' : ''}`}
+          style={{ 
+            padding: '7px 12px', 
+            minWidth: '36px',
+            backgroundColor: isActive ? 'var(--brand-primary)' : '',
+            borderColor: isActive ? 'var(--brand-primary)' : '',
+            color: isActive ? 'var(--brand-dark)' : ''
+          }}
+        >
+          {pageNum}
+        </button>
+      );
+    };
+
+    // Always show first page
+    addPageBtn(1);
+
+    let startPage = Math.max(2, page - 2);
+    let endPage = Math.min(pages - 1, page + 2);
+
+    if (page <= 3) {
+      endPage = Math.min(pages - 1, 5);
+    }
+    if (page >= pages - 2) {
+      startPage = Math.max(2, pages - 4);
+    }
+
+    if (startPage > 2) {
+      pageButtons.push(<span key="dots1" className="px-1 text-text-muted font-bold text-lg leading-none tracking-widest mt-1">...</span>);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      addPageBtn(i);
+    }
+
+    if (endPage < pages - 1) {
+      pageButtons.push(<span key="dots2" className="px-1 text-text-muted font-bold text-lg leading-none tracking-widest mt-1">...</span>);
+    }
+
+    // Always show last page if pages > 1
+    if (pages > 1) {
+      addPageBtn(pages);
+    }
+
+    return pageButtons;
+  };
   
   const [currentTab, setCurrentTab] = useState('all');
 
@@ -234,7 +295,7 @@ const StyleImagesManagement = () => {
       setLoading(true);
       const params = {
         page: pagination.page,
-        limit: 15
+        limit: limit
       };
       if (search) params.search = search;
       if (selectedCategory && selectedCategory !== 'all') params.category = selectedCategory;
@@ -274,7 +335,7 @@ const StyleImagesManagement = () => {
 
   useEffect(() => {
     fetchStyles();
-  }, [selectedCategory, selectedCategoryGroup, selectedKt, search, pagination.page, currentTab]);
+  }, [selectedCategory, selectedCategoryGroup, selectedKt, search, pagination.page, currentTab, limit]);
 
   useEffect(() => {
     fetchCategories();
@@ -312,10 +373,7 @@ const StyleImagesManagement = () => {
       setConfigSaving(true);
       const res = await adminApi.updateSystemConfig('DESKTOP_SERVER_URL', configDesktopUrl);
       if (res.success) {
-        setSyncToast({
-          type: 'success',
-          message: 'Remote Server URL saved successfully!'
-        });
+        alert('Remote Server URL saved successfully!');
         setConfigModalOpen(false);
       }
     } catch (err) {
@@ -323,7 +381,6 @@ const StyleImagesManagement = () => {
       alert(err.message || 'Failed to save config');
     } finally {
       setConfigSaving(false);
-      setTimeout(() => setSyncToast(null), 3000);
     }
   };
 
@@ -1329,7 +1386,26 @@ const StyleImagesManagement = () => {
             </div>
           )}
 
+          {/* Rows Per Page Filter */}
+          <div className="flex items-center gap-1.5 flex-shrink-0 border-l border-border-subtle pl-2 ml-1">
+            <span className="text-xs font-semibold text-text-muted uppercase">Rows:</span>
+            <select
+              value={limit}
+              onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setPagination({ ...pagination, page: 1 });
+              }}
+              className="admin-select py-1.5 text-xs w-20 h-[38px] bg-white font-medium outline-none focus:border-brand-primary cursor-pointer"
+              style={{ padding: '0 10px' }}
+            >
+              <option value={25}>25</option>
+              <option value={75}>75</option>
+              <option value={100}>100</option>
+              <option value={125}>125</option>
+            </select>
           </div>
+
+        </div>
       </div>
 
       {/* Tabs */}
@@ -1480,29 +1556,38 @@ const StyleImagesManagement = () => {
       
 
 
-      {/* Responsive Compact Pagination */}
-      <div className="admin-pagination-bar mt-4">
-        <span className="text-xs text-text-muted">
-          Showing {pagination.total > 0 ? (pagination.page - 1) * 15 + 1 : 0} - {Math.min(pagination.page * 15, pagination.total)} of {pagination.total} styles
-        </span>
-        <div className="flex items-center gap-2">
-          <button
-            disabled={pagination.page <= 1}
-            onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-            className="admin-pagination-btn"
-          >
-            ← Previous
-          </button>
-          <span className="text-xs font-semibold text-text-primary px-2">
-            {pagination.page} / {pagination.pages || 1}
+      {/* Responsive Pagination */}
+      <div className="admin-pagination-bar mt-6 rounded-b-xl border-x border-b border-border-subtle shadow-sm">
+        <div className="flex items-center gap-4 text-[13px] font-semibold text-text-muted">
+          <span>
+            Showing <strong className="text-brand-dark">{pagination.total > 0 ? (pagination.page - 1) * limit + 1 : 0} - {Math.min(pagination.page * limit, pagination.total)}</strong> of <strong className="text-brand-dark">{pagination.total}</strong> styles
           </span>
-          <button
-            disabled={pagination.page >= pagination.pages}
-            onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-            className="admin-pagination-btn"
-          >
-            Next →
-          </button>
+        </div>
+        
+        <div className="flex items-center gap-4 flex-wrap justify-center">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={pagination.page <= 1}
+              onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+              className="admin-pagination-btn"
+            >
+              Previous
+            </button>
+            
+            <div className="flex items-center gap-1.5 mx-2">
+              {renderPageNumbers()}
+            </div>
+
+            <button
+              type="button"
+              disabled={pagination.page >= pagination.pages}
+              onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+              className="admin-pagination-btn"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 

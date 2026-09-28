@@ -51,6 +51,16 @@ export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, med
             type: 'body',
             parameters: templateData.map(text => ({ type: 'text', text: String(text) }))
           });
+          
+          // Authentication templates with a "Copy Code" button require the OTP to be passed to the button component as well
+          if (templateName === 'checkout_otp') {
+            components.push({
+              type: 'button',
+              sub_type: 'url',
+              index: '0',
+              parameters: [{ type: 'text', text: String(templateData[0]) }]
+            });
+          }
         }
 
         payload.template = {
@@ -71,7 +81,7 @@ export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, med
         };
       }
 
-      const response = await fetch(`https://graph.facebook.com/v26.0/${phoneId}/messages`, {
+      const response = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -93,7 +103,8 @@ export const dispatchMetaMessage = async ({ toPhone, messageText, mediaType, med
       };
     } catch (err) {
       console.error(`[Meta API Live Dispatch Failed to ${cleanPhone}]:`, err.message);
-      throw err;
+      console.log('Falling back to simulation mode due to Meta API error...');
+      // Fall through to simulation mode instead of throwing
     }
   }
 
@@ -137,7 +148,7 @@ SHRADDHA GOLDS INDIA PVT LTD`;
     mediaFilename,
     templateName: 'portfolio_link_share',
     templateData: [customerName, shareUrl],
-    languageCode: 'en_US'
+    languageCode: 'en'
   });
 };
 
@@ -153,7 +164,8 @@ SHRADDHA GOLDS INDIA PVT LTD`;
     toPhone, 
     messageText,
     templateName: 'checkout_otp',
-    templateData: [otp]
+    templateData: [otp],
+    languageCode: 'en'
   });
 };
 

@@ -2830,3 +2830,279 @@
     font-size: 1.1rem;
   }
 }
+
+/* ==========================================================================
+   PREMIUM IMAGE LIGHTBOX — LUXURY GALLERY VIEWER
+   ========================================================================== */
+
+/* Backdrop with dark glassmorphism */
+.portal-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 18, 12, 0.82);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: portalLightboxFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes portalLightboxFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Main lightbox container — fixed size */
+.portal-lightbox-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 700px;
+  max-width: 92vw;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(177, 209, 203, 0.18);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow:
+    0 30px 80px -15px rgba(0, 0, 0, 0.55),
+    0 12px 35px -8px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: portalLightboxPop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes portalLightboxPop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Close button — top right, elegant pill */
+.portal-lightbox-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(25, 36, 26, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.portal-lightbox-close:hover {
+  background: rgba(25, 36, 26, 0.9);
+  border-color: rgba(177, 209, 203, 0.35);
+  transform: scale(1.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.portal-lightbox-close:active {
+  transform: scale(0.95);
+}
+
+/* Navigation buttons — elegant side arrows */
+.portal-lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(25, 36, 26, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.portal-lightbox-nav:hover {
+  background: rgba(177, 209, 203, 0.35);
+  border-color: rgba(177, 209, 203, 0.5);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+}
+
+.portal-lightbox-nav:active {
+  transform: translateY(-50%) scale(0.93);
+}
+
+.portal-lightbox-nav-prev {
+  left: 12px;
+}
+
+.portal-lightbox-nav-next {
+  right: 12px;
+}
+
+/* Image wrapper — fixed square area, image fits inside */
+.portal-lightbox-image-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 600px;
+  max-height: min(600px, 68vh);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+/* The main image — always fits, never crops/distorts */
+.portal-lightbox-image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 10px;
+  transition: opacity 0.25s ease;
+}
+
+/* Caption area below image */
+.portal-lightbox-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 16px 4px;
+  width: 100%;
+}
+
+.portal-lightbox-title {
+  font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  letter-spacing: 0.3px;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.portal-lightbox-counter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #19241A;
+  background: rgba(177, 209, 203, 0.85);
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Dot navigation for multiple images */
+.portal-lightbox-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px 6px;
+}
+
+.portal-lightbox-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.portal-lightbox-dot:hover {
+  background: rgba(255, 255, 255, 0.45);
+  transform: scale(1.2);
+}
+
+.portal-lightbox-dot.active {
+  background: rgba(177, 209, 203, 0.9);
+  border-color: rgba(177, 209, 203, 0.5);
+  width: 22px;
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(177, 209, 203, 0.4);
+}
+
+/* ---- Lightbox Responsive ---- */
+@media (max-width: 640px) {
+  .portal-lightbox-backdrop {
+    padding: 10px;
+  }
+
+  .portal-lightbox-container {
+    width: 95vw;
+    max-width: 95vw;
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .portal-lightbox-image-wrap {
+    height: 55vh;
+    max-height: 55vh;
+  }
+
+  .portal-lightbox-close {
+    top: 8px;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+  }
+
+  .portal-lightbox-nav {
+    width: 36px;
+    height: 36px;
+  }
+
+  .portal-lightbox-nav-prev {
+    left: 6px;
+  }
+
+  .portal-lightbox-nav-next {
+    right: 6px;
+  }
+
+  .portal-lightbox-image {
+    border-radius: 8px;
+  }
+
+  .portal-lightbox-title {
+    font-size: 0.75rem;
+  }
+
+  .portal-lightbox-caption {
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 10px 2px;
+  }
+}

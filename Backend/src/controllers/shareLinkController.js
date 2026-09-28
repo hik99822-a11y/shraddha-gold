@@ -356,31 +356,13 @@ export const getSharedContent = async (req, res) => {
     // Expand items/KT variants into separate product entries for Shared Link
     let styles = expandStylesForCustomer(rawStyles);
 
-    // Granular KT filtering per category
+    // Granular KT filtering per category (ONLY apply for specific category links to match customer portal behavior for general links)
     if (specificCategoryAccess) {
       if (Array.isArray(specificCategoryAccess.kts) && specificCategoryAccess.kts.length > 0 && !specificCategoryAccess.kts.includes('All')) {
         const allowedNorm = specificCategoryAccess.kts.map((k) => k.replace(/\s*KT/i, '').trim().toUpperCase());
         styles = styles.filter((s) => {
           const cand = `${s.purity || ''} ${s.item || ''} ${s.itemCode || ''}`.toUpperCase();
           return allowedNorm.some((k) => cand.includes(k));
-        });
-      }
-    } else if (Array.isArray(customer.categoryAccess) && customer.categoryAccess.length > 0) {
-      const catAccessMap = new Map();
-      customer.categoryAccess.forEach((ca) => {
-        const cName = (ca.categoryName || (ca.category && ca.category.name) || '').trim().toLowerCase();
-        if (cName && Array.isArray(ca.kts) && ca.kts.length > 0) {
-          catAccessMap.set(cName, ca.kts.map((k) => k.replace(/\s*KT/i, '').trim().toUpperCase()));
-        }
-      });
-
-      if (catAccessMap.size > 0) {
-        styles = styles.filter((s) => {
-          const catLower = (s.categoryName || '').trim().toLowerCase();
-          const allowedForCat = catAccessMap.get(catLower);
-          if (!allowedForCat || allowedForCat.length === 0) return true; // not restricted
-          const cand = `${s.purity || ''} ${s.item || ''} ${s.itemCode || ''}`.toUpperCase();
-          return allowedForCat.some((k) => cand.includes(k));
         });
       }
     }
