@@ -1,9 +1,9 @@
 import secureStorage from '../utils/secureStorage';
 
-export const BASE_URL = 'https://api.shraddhagold.com';
-export const API_URL = `${BASE_URL}/api`;
-// export const BASE_URL = "http://localhost:5000";
+// export const BASE_URL = 'https://api.shraddhagold.com';
 // export const API_URL = `${BASE_URL}/api`;
+export const BASE_URL = "http://localhost:5000";
+export const API_URL = `${BASE_URL}/api`;
 
 /**
  * Universal fetch wrapper with authorization header injection
@@ -359,5 +359,25 @@ export const orderApi = {
     request(`/orders/${id}/resend-whatsapp`, {
       method: 'POST'
     })
+};
+
+export const landingPageApi = {
+  getSettings: () => request('/landing-page'),
+  updateSettings: (data) => request('/landing-page', { method: 'PUT', body: JSON.stringify(data) }),
+  uploadImage: async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const token = secureStorage.getItem('shraddha_gold_token');
+    const response = await fetch(`${API_URL}/landing-page/upload-image`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: formData
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Image upload failed');
+    return data;
+  }
 };
 

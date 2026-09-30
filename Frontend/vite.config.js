@@ -11,7 +11,13 @@ export default defineConfig({
     allowedHosts: [
       'shraddhagold.com',
       'www.shraddhagold.com'
-    ]
+    ],
+    proxy: {
+      '/uploads': {
+        target: 'http://localhost:5000',
+        changeOrigin: true
+      }
+    }
   },
 
   build: {

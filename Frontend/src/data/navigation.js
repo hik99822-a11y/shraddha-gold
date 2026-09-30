@@ -27,33 +27,29 @@ export const topNavbarData = {
 };
 
 export const mainNavLinks = [
-  {
-    name: 'Home',
-    path: '/',
-    sectionId: 'hero'
-  },
-  {
-    name: 'Company Profile',
-    path: '/about',
-    pageRoute: '/about'
-  },
-  {
-    name: 'Our Products',
-    path: '/#products',
-    sectionId: 'products',
-    pageRoute: '/products'
-  },
-  {
-    name: 'Contact Us',
-    path: '/contact',
-    pageRoute: '/contact'
-  }
+  { name: 'Home', path: '/#hero', sectionId: 'hero' },
+  { name: 'Company Overview', path: '/#company-overview', sectionId: 'company-overview' },
+  { name: 'Our Values', path: '/#our-values', sectionId: 'our-values' },
+  { name: 'Categories', path: '/#categories', sectionId: 'categories' },
+  { name: 'USPs', path: '/#usp', sectionId: 'usp' },
+  // { name: 'Manufacturing Process', path: '/#manufacturing', sectionId: 'manufacturing' },
+  { name: 'Our Strength', path: '/#our-strength', sectionId: 'our-strength' },
+  { name: 'Exhibitions', path: '/#presence', sectionId: 'presence' }
 ];
 
 export const footerQuickLinks = [
-  { name: 'Company Profile', path: '/about', pageRoute: '/about' },
-  { name: 'Contact Us', path: '/contact', pageRoute: '/contact' },
-  { name: 'Privacy Policy', path: '/privacy-policy', pageRoute: '/privacy-policy' },
-  { name: 'Terms of Services', path: '/terms-of-services', pageRoute: '/terms-of-services' },
-  { name: 'Login', path: '/login', isAuth: true }
+  { name: 'Home', path: '/#hero', sectionId: 'hero' },
+  { name: 'Company Overview', path: '/#company-overview', sectionId: 'company-overview' },
+  { name: 'Our Values', path: '/#our-values', sectionId: 'our-values' },
+  { name: 'Categories', path: '/#categories', sectionId: 'categories' },
+  { name: 'USPs', path: '/#usp', sectionId: 'usp' },
+  // { name: 'Manufacturing Process', path: '/#manufacturing', sectionId: 'manufacturing' },
+  { name: 'Our Strength', path: '/#our-strength', sectionId: 'our-strength' },
+  { name: 'Exhibitions', path: '/#presence', sectionId: 'presence' },
+  { name: 'Inquiries', path: '/#faq', sectionId: 'faq' },
+  { name: 'Become a Partner', path: '/#lead-form', sectionId: 'lead-form' },
+  { name: 'Exclusive Access', path: '/#newsletter', sectionId: 'newsletter' }
+  // { name: 'Privacy Policy', path: '/privacy-policy', pageRoute: '/privacy-policy' },
+  // { name: 'Terms of Services', path: '/terms-of-services', pageRoute: '/terms-of-services' },
+  // { name: 'Login', path: '/login', isAuth: true }
 ];

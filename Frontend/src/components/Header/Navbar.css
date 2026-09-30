@@ -138,7 +138,7 @@
 .desktop-nav-list {
   display: flex;
   align-items: center;
-  gap: 34px;
+  gap: 16px;
   list-style: none;
 }
 
@@ -147,7 +147,7 @@
 }
 
 .desktop-nav-link {
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: 0.04em;
@@ -337,7 +337,8 @@
   position: fixed;
   top: 0;
   right: -340px;
-  width: 320px;
+  width: 100%;
+  max-width: 320px;
   height: 100vh;
   background: var(--bg-white);
   border-left: 1px solid var(--border-subtle);

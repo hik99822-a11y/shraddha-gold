@@ -11,8 +11,8 @@ export const contactData = {
     full: 'Plot 42, SEZ Jewellery Manufacturing Zone, Andheri East, Mumbai — 400096, Maharashtra, India'
   },
   phones: [
-    { label: 'Direct Desk', number: '+91 98250 12345', href: 'tel:+919825012345' },
-    { label: 'Board Line', number: '+91 22 6789 0123', href: 'tel:+912267890123' }
+    { label: 'Direct Desk', number: '+91 76006 19325', href: 'tel:+917600619325' },
+    { label: 'Board Line', number: '+91 76006 19325', href: 'tel:+917600619325' }
   ],
   emails: [
     { label: 'General & Procurement', email: 'info@shraddhagold.com', href: 'mailto:info@shraddhagold.com' },

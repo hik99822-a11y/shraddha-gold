@@ -14,10 +14,11 @@ const uploadsDir = (process.env.DESKTOP_SERVER_DIR && fs.existsSync(process.env.
   ? process.env.DESKTOP_SERVER_DIR
   : (process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads'));
 const styleImagesDir = path.join(uploadsDir, 'style-images');
+const landingPageImagesDir = path.join(uploadsDir, 'landing-page');
 const excelDir = path.join(uploadsDir, 'excel');
 
 // Ensure upload directories exist
-[uploadsDir, styleImagesDir, excelDir].forEach((dir) => {
+[uploadsDir, styleImagesDir, landingPageImagesDir, excelDir].forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -59,6 +60,32 @@ export const imageUpload = multer({
       cb(null, true);
     } else {
       cb(new Error('Only JPEG, JPG, PNG, WEBP, and AVIF images are permitted'));
+    }
+  }
+});
+
+// Disk storage for landing page images
+const landingPageImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, landingPageImagesDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const cleanName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e6);
+    cb(null, `${cleanName}_${uniqueSuffix}${ext}`);
+  }
+});
+
+export const landingPageImageUpload = multer({
+  storage: landingPageImageStorage,
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB per image
+  fileFilter: (req, file, cb) => {
+    const allowed = /\.(jpg|jpeg|png|webp|avif|svg)$/i;
+    if (allowed.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only standard image files are allowed!'));
     }
   }
 });

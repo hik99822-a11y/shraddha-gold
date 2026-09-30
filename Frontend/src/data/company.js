@@ -4,10 +4,10 @@
  */
 
 export const companyData = {
-  name: 'Shraddha Gold',
-  legalName: 'Shraddha Gold India Pvt. Ltd.',
-  establishedYear: 2008,
-  legacyYears: '15+',
+  name: "SHRADDHA GOLD'S INDIA PVT LTD",
+  legalName: "SHRADDHA GOLD'S INDIA PVT LTD",
+  establishedYear: 2023,
+  legacyYears: '8+',
   tagline: 'Generations of Craftsmanship. Masterpieces in Pure Gold.',
   heroLabel: 'PREMIER FINE GOLD JEWELLERY MANUFACTURER & B2B FOUNDRY',
   heroDescription: 'Precision-engineered fine gold jewellery manufacturing for luxury brands, high-end retail chains, and international businesses. Combining advanced induction vacuum casting with generational goldsmith artistry.',
@@ -20,14 +20,14 @@ export const companyData = {
     headline: 'Generations of Metallurgy Mastery & Artisan Heritage',
     subheading: 'Precision Engineering Meets Timeless Indian Craftsmanship',
     paragraphs: [
-      'Established in 2008, Shraddha Gold was founded with a clear mission: to transform gold jewellery manufacturing from traditional fragmented workshop methods into a disciplined, high-precision industrial standard.',
-      'Over 15+ years of dedicated operations at our Mumbai manufacturing facility, we have evolved into an indispensable production partner for leading retail jewellery chains, private labels, and luxury jewellery brands across domestic and international markets.',
+      'Established in 2017, Shraddha Gold was founded with a clear mission: to transform gold jewellery manufacturing from traditional fragmented workshop methods into a disciplined, high-precision industrial standard.',
+      'Over 8+ years of dedicated operations at our Mumbai manufacturing facility, we have evolved into an indispensable production partner for leading retail jewellery chains, private labels, and luxury jewellery brands across domestic and international markets.',
       'From complex multi-component articulated bridal suites to micro-pavé cocktail rings and high-tensile link chains, every design is realized with zero-porosity induction casting, calibrated alloy metallurgy, and laser BIS hallmarking.'
     ],
     highlights: [
       {
-        title: '15+ Years Legacy',
-        desc: 'Over a decade and a half of metallurgical excellence and client trust'
+        title: '8+ Years Legacy',
+        desc: 'Nearly a decade of metallurgical excellence and client trust'
       },
       {
         title: '100% BIS Hallmarked',

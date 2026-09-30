@@ -68,6 +68,8 @@
 html {
   font-size: 16px;
   color-scheme: light;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 /* Lenis Smooth Scroll Recommended Styles */
@@ -95,6 +97,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  max-width: 100%;
   position: relative;
 }
 

@@ -95,7 +95,8 @@ const AdminLayout = () => {
         { name: 'Excel Stock', path: '/admin/excel-stock', icon: FileSpreadsheet },
         { name: 'Style Images', path: '/admin/style-images', icon: Image },
         { name: 'Categories', path: '/admin/categories', icon: Layers },
-        { name: 'PDF Compress', path: '/admin/pdf-compress', icon: FileArchive }
+        { name: 'PDF Compress', path: '/admin/pdf-compress', icon: FileArchive },
+        { name: 'Landing Page', path: '/admin/landing-page', icon: Globe }
       ]
     }
   ];

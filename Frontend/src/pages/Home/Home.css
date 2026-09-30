@@ -9,12 +9,18 @@
   position: relative;
   width: 100%;
   height: calc(100vh - 80px);
-  min-height: 600px;
+  min-height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   background-color: var(--bg-card);
+}
+
+@media (min-width: 768px) {
+  .redesigned-hero-section {
+    min-height: 600px;
+  }
 }
 
 .hero-slide {

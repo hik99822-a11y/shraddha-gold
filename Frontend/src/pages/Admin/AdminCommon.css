@@ -5759,3 +5759,57 @@
     max-width: 280px !important;
   }
 }
+
+/* ==========================================================================
+   BUTTONS (Primary & Secondary Actions)
+   ========================================================================== */
+
+.admin-btn-primary {
+  background: var(--brand-dark, #19241A);
+  color: #ffffff;
+  border: 1px solid var(--brand-dark, #19241A);
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(25, 36, 26, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-btn-primary:hover {
+  background: #2a3d2c;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(25, 36, 26, 0.2);
+}
+
+.admin-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.admin-btn-secondary {
+  background: transparent;
+  color: var(--brand-dark, #19241A);
+  border: 2px dashed #9CBDB7;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.admin-btn-secondary:hover {
+  background: #EAF2F0;
+  border-color: #B1D1CB;
+  color: #19241A;
+}

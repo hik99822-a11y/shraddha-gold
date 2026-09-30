@@ -1,4 +1,5 @@
 import Inquiry from '../models/Inquiry.js';
+import sendEmail from '../utils/sendEmail.js';
 
 /**
  * @desc    Submit a B2B jewellery manufacturing inquiry
@@ -26,6 +27,30 @@ export const createInquiry = async (req, res) => {
       estimatedVolume: estimatedVolume || 'Sample / Prototype',
       message
     });
+
+    // Send email notification via SMTP
+    const emailHtml = `
+      <h2>New Website Submission: ${newInquiry.subject}</h2>
+      <p><strong>Name:</strong> ${newInquiry.fullName}</p>
+      <p><strong>Email:</strong> ${newInquiry.email}</p>
+      <p><strong>Phone:</strong> ${newInquiry.phone}</p>
+      <p><strong>Company:</strong> ${newInquiry.companyName}</p>
+      <p><strong>Category/Interest:</strong> ${newInquiry.category}</p>
+      <br />
+      <p><strong>Message:</strong></p>
+      <p style="white-space: pre-wrap; background: #f4f4f4; padding: 15px; border-radius: 5px;">${newInquiry.message}</p>
+    `;
+
+    // Only send if SMTP credentials are provided, avoids breaking local dev
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      // Send to the specified admin email
+      const notifyEmail = 'hik99822@gmail.com'; 
+      await sendEmail({
+        to: notifyEmail,
+        subject: `New Lead/Subscriber: ${newInquiry.fullName}`,
+        html: emailHtml
+      });
+    }
 
     res.status(201).json({
       success: true,

@@ -14,9 +14,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { topNavbarData, mainNavLinks } from '../../data/navigation';
+import { useLandingPage } from '../../context/LandingPageContext';
 import './Navbar.css';
 
 const Navbar = () => {
+  const { settings } = useLandingPage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -93,24 +95,24 @@ const Navbar = () => {
       <div className="top-navbar">
         <div className="container top-navbar-inner">
           <div className="top-nav-socials">
-            <a href={topNavbarData.socials[0].url} target="_blank" rel="noopener noreferrer" className="top-social-link">
+            <a href={settings?.general?.facebookLink || topNavbarData.socials[0].url} target="_blank" rel="noopener noreferrer" className="top-social-link">
               <Facebook size={14} className="social-svg" />
               <span className="social-label">{topNavbarData.socials[0].name}</span>
             </a>
             <span className="top-divider">|</span>
-            <a href={topNavbarData.socials[1].url} target="_blank" rel="noopener noreferrer" className="top-social-link">
+            <a href={settings?.general?.instagramLink || topNavbarData.socials[1].url} target="_blank" rel="noopener noreferrer" className="top-social-link">
               <Instagram size={14} className="social-svg" />
               <span className="social-label">{topNavbarData.socials[1].name}</span>
             </a>
           </div>
           <div className="top-nav-contact">
-            <a href={topNavbarData.contact.phoneHref} className="top-contact-item">
+            <a href={`tel:${settings?.general?.contactPhone || topNavbarData.contact.phone}`} className="top-contact-item">
               <Phone size={13} className="contact-svg" />
-              <span>{topNavbarData.contact.phone}</span>
+              <span>{settings?.general?.contactPhone || topNavbarData.contact.phone}</span>
             </a>
-            <a href={topNavbarData.contact.emailHref} className="top-contact-item">
+            <a href={`mailto:${settings?.general?.contactEmail || topNavbarData.contact.email}`} className="top-contact-item">
               <Mail size={13} className="contact-svg" />
-              <span>{topNavbarData.contact.email}</span>
+              <span>{settings?.general?.contactEmail || topNavbarData.contact.email}</span>
             </a>
           </div>
         </div>
@@ -134,21 +136,18 @@ const Navbar = () => {
           {/* Center: Main Navigation Links */}
           <nav className="desktop-navigation center-nav" aria-label="Main Navigation">
             <ul className="desktop-nav-list">
-              <li className="desktop-nav-item">
-                <a
-                  href="/#products"
-                  onClick={(e) => handleNavClick(e, { sectionId: 'products', path: '/#products' })}
-                  className="desktop-nav-link"
-                >
-                  Our Products
-                </a>
-              </li>
-              <li className="desktop-nav-item">
-                <Link to="/about" className="desktop-nav-link">Company Profile</Link>
-              </li>
-              <li className="desktop-nav-item">
-                <Link to="/contact" className="desktop-nav-link">Contact Us</Link>
-              </li>
+
+              {mainNavLinks.map((link) => (
+                <li key={link.name} className="desktop-nav-item">
+                  <a
+                    href={link.path}
+                    onClick={(e) => handleNavClick(e, link)}
+                    className="desktop-nav-link"
+                  >
+                    {link.name}
+                  </a>
+                </li>
+              ))}
             </ul>
           </nav>
 
