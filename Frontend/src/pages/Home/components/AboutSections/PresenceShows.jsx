@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLandingPage } from '../../../../context/LandingPageContext';
+import { getImageUrl } from '../../../../utils/imageHelper';
 import './AboutSections.css';
 
 const PresenceShows = () => {
@@ -39,7 +40,7 @@ const PresenceShows = () => {
           ]).filter(img => img).map((img, idx) => (
             <img 
               key={idx}
-              src={img} 
+              src={getImageUrl(img)} 
               alt={`Exhibition Event ${idx + 1}`} 
               className="premium-presence-gallery-img" 
               loading="lazy"

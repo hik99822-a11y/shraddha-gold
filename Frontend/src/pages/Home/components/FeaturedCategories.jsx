@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLandingPage } from '../../../context/LandingPageContext';
+import { getImageUrl } from '../../../utils/imageHelper';
 
 const defaultCategories = [
   { name: 'Rings', image: 'https://images.unsplash.com/photo-1592317295760-5c1f677dfc78?auto=format&fit=crop&w=600&q=80', link: '/products?category=rings' },
@@ -35,7 +36,7 @@ const CategoryCard = ({ category }) => {
       style={{ position: 'relative' }}
     >
       <img 
-        src={images[currentImageIndex]} 
+        src={getImageUrl(images[currentImageIndex])} 
         alt={category.name} 
         className="premium-category-img" 
         style={{ transition: 'opacity 0.3s ease' }} 

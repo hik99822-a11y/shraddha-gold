@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLandingPage } from '../../../../context/LandingPageContext';
+import { getImageUrl } from '../../../../utils/imageHelper';
 import './AboutSections.css';
 
 const StarIcon = () => (
@@ -63,7 +64,7 @@ const CompanyOverview = () => {
           </div>
         </div>
         <div className="overview-image-wrapper">
-          <img src={overview.image || 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80'} alt="Company Overview" className="overview-img" loading="lazy" />
+          <img src={getImageUrl(overview.image) || 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80'} alt="Company Overview" className="overview-img" loading="lazy" />
         </div>
       </div>
     </section>

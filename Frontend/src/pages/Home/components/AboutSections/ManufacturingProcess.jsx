@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLandingPage } from '../../../../context/LandingPageContext';
+import { getImageUrl } from '../../../../utils/imageHelper';
 import './AboutSections.css';
 
 const ManufacturingProcess = () => {
@@ -24,7 +25,7 @@ const ManufacturingProcess = () => {
           {steps.map((step, index) => (
             <div className="premium-process-card" key={index}>
               <div className="process-card-image">
-                <img src={step.image || 'https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?auto=format&fit=crop&w=800&q=80'} alt={step.title} loading="lazy" />
+                <img src={getImageUrl(step.image) || 'https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?auto=format&fit=crop&w=800&q=80'} alt={step.title} loading="lazy" />
                 <div className="process-step-number">{String(index + 1).padStart(2, '0')}</div>
               </div>
               <div className="process-card-content">

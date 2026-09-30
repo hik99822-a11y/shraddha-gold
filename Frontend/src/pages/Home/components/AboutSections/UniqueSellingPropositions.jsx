@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLandingPage } from '../../../../context/LandingPageContext';
+import { getImageUrl } from '../../../../utils/imageHelper';
 import './AboutSections.css';
 
 const UniqueSellingPropositions = () => {
@@ -41,12 +42,12 @@ const UniqueSellingPropositions = () => {
         <div className="usps-images-masonry">
            <div className="masonry-col masonry-col-1">
              {col1Images.map((usp, index) => (
-               <img key={index} src={usp.image} alt={usp.title} className="masonry-img" loading="lazy" />
+               <img key={index} src={getImageUrl(usp.image)} alt={usp.title} className="masonry-img" loading="lazy" />
              ))}
            </div>
            <div className="masonry-col masonry-col-2">
              {col2Images.map((usp, index) => (
-               <img key={index} src={usp.image} alt={usp.title} className="masonry-img" loading="lazy" />
+               <img key={index} src={getImageUrl(usp.image)} alt={usp.title} className="masonry-img" loading="lazy" />
              ))}
            </div>
         </div>

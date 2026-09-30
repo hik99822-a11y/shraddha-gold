@@ -2,6 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { landingPageApi, BASE_URL } from '../../../services/api';
 import '../AdminCommon.css';
 
+const getImageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  
+  // Clean BASE_URL (remove trailing slashes or /api if mistakenly included)
+  let base = BASE_URL.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+  
+  // Prevent replacing 'api' in the middle of a domain name (like api.shraddhagold.com)
+  return `${base}${path.startsWith('/') ? path : '/' + path}`;
+};
+
 const ImageUploadField = ({ value, onChange, label = 'Image' }) => {
   const [uploading, setUploading] = React.useState(false);
   const fileInputRef = React.useRef(null);
@@ -28,7 +39,7 @@ const ImageUploadField = ({ value, onChange, label = 'Image' }) => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {value && (
           <img 
-            src={value.startsWith('/') ? `${BASE_URL.replace('/api', '')}${value}` : value} 
+            src={getImageUrl(value)} 
             alt="Preview" 
             style={{ width: '100%', height: '140px', objectFit: 'contain', borderRadius: '6px', border: '1px solid #DCE7E4', background: '#fff', padding: '4px' }} 
           />

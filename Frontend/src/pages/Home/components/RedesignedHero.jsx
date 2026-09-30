@@ -4,6 +4,7 @@ import { useLandingPage } from '../../../context/LandingPageContext';
 import img1 from '../../../assets/WhatsApp Image 2026-09-10 at 12.34.25 PM (1).jpeg';
 import img2 from '../../../assets/WhatsApp Image 2026-09-10 at 12.34.26 PM (2).jpeg';
 import img3 from '../../../assets/WhatsApp Image 2026-09-10 at 12.34.27 PM (1).jpeg';
+import { getImageUrl } from '../../../utils/imageHelper';
 
 const defaultSlides = [
   {
@@ -61,7 +62,7 @@ const RedesignedHero = () => {
         >
           <div 
             className="hero-background-parallax"
-            style={{ backgroundImage: `url("${slide.image}")` }}
+            style={{ backgroundImage: `url("${getImageUrl(slide.image)}")` }}
           ></div>
           <div className="hero-overlay" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}></div>
           
